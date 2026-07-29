@@ -1,0 +1,414 @@
+{
+  "hero": {
+    "headline": "Advancing Computational Mathematics & AI",
+    "subheading": "Assistant Professor at Digital University Kerala | Top 2% Scientist (Stanford/Elsevier)",
+    "stats": {
+      "publications": 64,
+      "citations": 1032,
+      "hIndex": 19,
+      "studentsGuided": 13,
+      "fundedProjects": 2,
+      "collaborators": 10
+    }
+  },
+  "about": {
+    "introduction": "I am Dr. Sishu Shankar Muni, an Assistant Professor at the School of Digital Sciences, Digital University Kerala. My research revolves around Dynamical Systems, Nonlinear Dynamics, Network of Oscillators, Data Science, High-Performance Computing, and Machine Learning.",
+    "education": [
+      { "id": 1, "year": "2022", "degree": "Ph.D. Mathematics, Globally resonant homoclinic tangencies", "institution": "Massey University, New Zealand (Awarded: 27-04-2022)" },
+      { "id": 2, "year": "2018", "degree": "M.Sc. Mathematics, Synchronization aspect of star connected Chua circuits", "institution": "National Institute of Technology Rourkela, India (CGPA: 8.85)" },
+      { "id": 3, "year": "2016", "degree": "B.Sc. Mathematics", "institution": "National Institute of Technology Rourkela, India (CGPA: 8.92)" }
+    ],
+    "employment": [
+      { "id": 1, "year": "2023 - Present", "role": "Assistant Professor", "institution": "School of Digital Sciences, Digital University Kerala", "description": "Area of research: Dynamical systems, Nonlinear dynamics, network of oscillators, data science, High Performance Computing, Machine Learning." },
+      { "id": 2, "year": "2022 - 2023", "role": "Post-Doctoral Fellow", "institution": "IISER-Kolkata", "description": "Doubling bifurcations of mode-locked periodic orbits in three-dimensional maps." }
+    ],
+    "skills": ["JAVA", "C", "C++", "Python", "R", "Haskell", "SQL", "MATLAB", "NetLogo", "PPlane"],
+    "references": [
+      "Dr. David J.W. Simpson, Massey University, NZ, E-mail: d.j.w.simpson@massey.ac.nz",
+      "Dist. Prof. Robert I. McLachlan, Massey University, NZ, E-mail: R.McLachlan@massey.ac.nz",
+      "Prof. Soumitro Banerjee, IISER Kolkata, IN, E-mail: soumitro@iiserkol.ac.in",
+      "Prof. Astero Provata, National Center for Scientific Research ‘Demokritos’ 15310 Athens, Greece, E-mail: a.provata@inn.demokritos.gr",
+      "Prof. Kishor Chandra Pati, NIT Rourkela, IN, E-mail: kcpati@nitrkl.ac.in"
+    ]
+  },
+  "awardsAndScholarships": [
+    { "id": 1, "year": "2025", "title": "Top 2% Scientist list 2025", "issuer": "Stanford University list, Elsevier" },
+    { "id": 2, "year": "2026", "title": "Young Innovators Programme State-level Winner", "issuer": "Honored by the Hon’ble Chief Minister Shri. Pinarayi Vijayan" },
+    { "id": 3, "year": "2023", "title": "Funding award from International Society of Discrete dynamics", "issuer": "International Society of Discrete dynamics" },
+    { "id": 4, "year": "2022", "title": "Funding award from International Society of Discrete dynamics", "issuer": "International Society of Discrete dynamics" },
+    { "id": 5, "year": "2022", "title": "Post doctoral Fellowship", "issuer": "IISER Kolkata" },
+    { "id": 6, "year": "2021", "title": "School of Fundamental Sciences doctoral bursary scholarship award", "issuer": "School of Fundamental Sciences" },
+    { "id": 7, "year": "2018-2021", "title": "Massey University doctoral scholarship", "issuer": "Massey University" },
+    { "id": 8, "year": "2021", "title": "SMB registration fellowship", "issuer": "Society of Mathematical Biology" },
+    { "id": 9, "year": "2021", "title": "SIAM travel award", "issuer": "SIAM dynamical systems conference" },
+    { "id": 10, "year": "2020", "title": "NZMS travel award", "issuer": "ANZIAM conference, Australia" },
+    { "id": 11, "year": "2019", "title": "ANZIAM travel award", "issuer": "MINZ (Maths in Industry New Zealand) workshop" },
+    { "id": 12, "year": "2019", "title": "Kalman Summer scholarship", "issuer": "NZMRI" },
+    { "id": 13, "year": "2018", "title": "Gold medal for academic excellence", "issuer": "NIT, Rourkela" },
+    { "id": 14, "year": "2018", "title": "Topper of integrated M.Sc. mathematics", "issuer": "NIT, Rourkela" },
+    { "id": 15, "year": "2018", "title": "Santa Fe Institute MOOC scholarship", "issuer": "Santa Fe Institute" },
+    { "id": 16, "year": "2017", "title": "S.N Bhatt memorial excellence fellow", "issuer": "International Centre for Theoretical Sciences" },
+    { "id": 17, "year": "2016", "title": "Summer research fellow", "issuer": "Indian Academy of Sciences" },
+    { "id": 18, "year": "2014-2018", "title": "Annual SBI scholarship", "issuer": "State Bank of India" }
+  ],
+  "publicationsAndMetrics": {
+    "journals": 64,
+    "citations": 1032,
+    "hIndex": 19,
+    "i10Index": 34,
+    "studentLinkedPublications": "Extensive publications involving M.Sc. and Ph.D. students in reputed journals like Chaos, Solitons and Fractals.",
+    "editorialRoles": [
+      "Editorial board member at Franklin Open, Elsevier"
+    ],
+    "reviewerRoles": [
+      "Royal Society of Philosophical Transactions",
+      "Chaos, Solitons and Fractals",
+      "Nature: Scientific Reports",
+      "Nonlinear Dynamics",
+      "International Journal of Bifurcation and Chaos"
+    ]
+  },
+  "fundingAndGrants": [
+    {
+      "id": 1,
+      "title": "Beyond Arnold Tongues: The Role of Extreme Curves, Superstable Curves, and Invariant Manifolds in the Bifurcation Structure of Chaotic Mapping",
+      "funder": "NBHM (National Board for Higher Mathematics), Department of Atomic Energy (DAE)",
+      "period": "2025-2028"
+    },
+    {
+      "id": 2,
+      "title": "AICTE funding grant for hosting postdoctoral fellow",
+      "funder": "AICTE (All India Council for Technical Education)",
+      "period": "2026-2028"
+    }
+  ],
+  "journalPublications": [
+    { "id": 1, "authors": "S.S. Muni", "title": "Conjoined Lorenz twin attractors in 3D sinusoidal map", "journal": "Chaos, Solitons and Fractals", "year": "2026" },
+    { "id": 2, "authors": "S.S. Muni", "title": "Robust chaos in generalised ceil map", "journal": "Chaos, Solitons and Fractals", "year": "2026" },
+    { "id": 3, "authors": "S.S. Muni", "title": "Ergodic and resonant torus doubling bifurcation in a three-dimensional quadratic map", "journal": "Nonlinear Dynamics", "year": "2024" },
+    { "id": 4, "authors": "S.S. Muni", "title": "Complexity of coexistence regions in the GRHT map", "journal": "International Journal of Bifurcation and Chaos", "year": "2025" },
+    { "id": 5, "authors": "S.S. Muni", "title": "Discrete Lorenz attractors in 3D sinusoidal maps", "journal": "International Journal of Bifurcation and Chaos", "year": "2025" },
+    { "id": 6, "authors": "S.S. Muni", "title": "Pathways to hyperchaos in a three-dimensional quadratic map", "journal": "Eur. Phys. J. Plus", "year": "2024" },
+    { "id": 7, "authors": "S.S. Muni", "title": "Torus and Hyperchaos in three-dimensional Lotka-Volterra map", "journal": "International Journal of Bifurcation and Chaos", "year": "2025" },
+    { "id": 8, "authors": "S.S. Muni", "title": "Discontinuous-like periodic transitions and coexistence of mode-locked orbits in delayed Moran-Ricker map", "journal": "International Journal of Dynamics and Control", "year": "2025" },
+    { "id": 9, "authors": "Vismaya V S, S. S. Muni, A. Provata", "title": "Cyclic periodic synchronization in a ring–star network of piecewise-linear discontinuous maps", "journal": "Chaos", "year": "2026" },
+    { "id": 10, "authors": "Vismaya V S, S.S. Muni", "title": "Cyclic Periodic Synchronization in Networks of Piecewise Nonlinear Discontinuous Maps", "journal": "Chaos, Solitons & Fractals", "year": "2026" },
+    { "id": 11, "authors": "Aman Sharma, Aishwaraya, Bapin Mondal, Bertrand Frederick Boui A Boya, Yamina Soula, S. S. Muni", "title": "Sentiment-aware competitive graph diffusion model for negative information control in online social networks", "journal": "Chaos, Solitons & Fractals", "year": "2026" },
+    { "id": 12, "authors": "Swetha P., Carlos E.P. Abreu, Joelson D.V. Hermes, S. S. Muni, Rene O. Medrano-T", "title": "Critical fractal boundary between chaos and periodicity: Exploring the Devil’s staircase", "journal": "Chaos, Solitons & Fractals", "year": "2026" },
+    { "id": 13, "authors": "Harisankar, R., Mohamed Samshad, S. S. Muni, and Abhishek Kaushik", "title": "Hyperchaotic Trajectory Planning for Quadrotor Surveillance of Infrastructure with Integrated Collision Avoidance", "journal": "International Journal of Bifurcation and Chaos", "year": "2026" },
+    { "id": 14, "authors": "Harisankar R., M. Samshad, S. S. Muni, A. Kaushik", "title": "Novel 3D chaotic quadrotor trajectories for infrastructure monitoring", "journal": "Intelligent Service Robotics", "year": "2026" },
+    { "id": 15, "authors": "W. Tikjha, S.S. Muni", "title": "Explicit 2-cycle solutions and bifurcation structures in a non-invertible planar rational map", "journal": "Int. J. Dynamics and Control", "year": "2025" },
+    { "id": 16, "authors": "I. Ghosh, H.O. Fatoyinbo, S.S. Muni", "title": "Time series analysis of coupled slow–fast neuron models: From Hurst exponent to Granger causality", "journal": "Chaos", "year": "2025" },
+    { "id": 17, "authors": "I. Ghosh, H.O. Fatoyinbo, S.S. Muni", "title": "Comprehensive analysis of slow-fast denatured Morris-Lecar neurons", "journal": "Physical Review E", "year": "2025" },
+    { "id": 18, "authors": "VS Vismaya, S.S. Muni, A.K. Panda, B Mondal", "title": "Degn–Harrison map: Dynamical and network behaviours with applications in image encryption", "journal": "Chaos, Solitons & Fractals", "year": "2025" },
+    { "id": 19, "authors": "E Rybalova, A Ryabov, S.S. Muni, G Strelkova", "title": "Coherence-resonance patterning in neural map networks under Gaussian and L´evy noise", "journal": "The European Physical Journal Special Topics", "year": "2025" },
+    { "id": 20, "authors": "G.M. Ram´ırez-Avila, S.S. Muni, T. Kapitaniak", "title": "Unfolding the distribution of periodicity regions and diversity of chaotic attractors in the Chialvo neuron map", "journal": "Chaos (Editors Pick)", "year": "2024" },
+    { "id": 21, "authors": "J.S. Ram, S.S. Muni, I.A. Shepelev", "title": "Spatiotemporal patterns in a 2D lattice of Hindmarsh-Rose neurons induced by high-amplitude pulses", "journal": "Chaos Solitons & Fractals", "year": "2024" },
+    { "id": 22, "authors": "Joelson D. V. Hermes, Matheus Hansen, Sishu S. Muni, Edson D. Leonel, Iberˆe Luiz Caldas", "title": "Analysis of invariant spanning curves in oval billiards: A numerical approach based on Slater’s theorem", "journal": "Chaos: AIP", "year": "2025" },
+    { "id": 23, "authors": "I.D. Kolesnikov, A.V. Bukh, S.S. Muni, J.S. Ram", "title": "Impact of L´evy noise on spiral waves in a lattice of Chialvo neuron map", "journal": "Chaos, Solitons & Fractals", "year": "2024" },
+    { "id": 24, "authors": "A. S. Nair, I. Ghosh, H. O. Fatoyinbo, S. S. Muni", "title": "On the higher-order smallest ring star network of Chialvo neurons under diffusive couplings", "journal": "Chaos", "year": "2024" },
+    { "id": 25, "authors": "E. Rybalova, A. Ryabov, S.S. Muni, G. Strelkova", "title": "L´evy Noise-Induced Coherence Resonance in Neural Maps", "journal": "Chaos, Solitons, and Fractals", "year": "2024" },
+    { "id": 26, "authors": "B Mondal, P Majumdar, A Sarkar, SS Muni", "title": "Chaos to stability: the role of memory in tri-trophic food chain dynamics", "journal": "Journal of Applied Mathematics and Computing", "year": "2025" },
+    { "id": 27, "authors": "P Swetha, JS Ram, DS Varghese, AS Nair, AM Suresh, C Davis, CR Remya, AS Abhirami, A Hareendran, N Fathima, SS Muni, AV Bukh", "title": "The influence of L´evy noise and delay on the spiral waves in one and two-dimensional lattices of coupled Chialvo neurons", "journal": "Chaos, Solitons & Fractals", "year": "2025" },
+    { "id": 28, "authors": "Harisankar R., Abhishek Kaushik, Sishu Shankar Muni", "title": "Path planning for multi-quadrotor 3D boundary surveillance using non-autonomous discrete memristor hyperchaotic system", "journal": "Franklin Open", "year": "2025" },
+    { "id": 29, "authors": "Vismaya VS, B.V. Nair, S.S. Muni", "title": "Deep learning for prediction and classifying the dynamical behaviour of piecewise-smooth maps", "journal": "Franklin Open", "year": "2024" },
+    { "id": 30, "authors": "K Srinivasan, G Sivaganesh, TF Fozin, RG Pradeep, SS Muni", "title": "Symmetry, chaos control and hysteresis in a second-order non-autonomous circuit with square-wave excitation", "journal": "The European Physical Journal Plus", "year": "2024" },
+    { "id": 31, "authors": "Soula, Y., S.S. Muni, Ouahabi, R.", "title": "Dynamical behavior and bifurcations in a two-dimensional discrete chaotic system with a rational fraction", "journal": "J. Appl. Math. Comput.", "year": "2024" },
+    { "id": 32, "authors": "BF Boui A Boya, S.S. Muni, JL Echenaus´ıa-Monroy, J Kengne", "title": "Chaos, synchronization, and emergent behaviors in memristive hopfield networks: bi-neuron and regular topology analysis", "journal": "The European Physical Journal Special Topics", "year": "2024" },
+    { "id": 33, "authors": "S.S. Muni", "title": "Unstable periodic orbits and hyperchaos in 2D quadratic memristor map", "journal": "Franklin Open", "year": "2024" },
+    { "id": 34, "authors": "I. Ghosh, A.S. Nair, H.O. Fatoyinbo, S.S. Muni", "title": "Dynamical properties of a small heterogeneous chain network of neurons in discrete time", "journal": "Eur. Phys. J. Plus", "year": "2024" },
+    { "id": 35, "authors": "J.L. Echenaus´ıa-Monroy, R.C. Garc´ıa, H.E.G. Velazquez, S.S. Muni, J.Alvarez-Gallegos", "title": "Predicting Tipping Points in a Family of PWL Systems: Detecting Multistability via Linear Operators Properties", "journal": "Chaos Theory and Applications", "year": "2024" },
+    { "id": 36, "authors": "D. Mukherjee, S.S. Muni, H.O. Fatoyinbo", "title": "A dynamical system framework for a mathematical model of atherosclerosis", "journal": "Franklin Open", "year": "2024" },
+    { "id": 37, "authors": "Srinivasan, K., Sivaganesh, G., Fozin, T.F., R. G. Pradeep, S.S. Muni", "title": "Symmetry, chaos control and hysteresis in a second-order non-autonomous circuit with square-wave excitation", "journal": "Eur. Phys. J. Plus", "year": "2024" },
+    { "id": 38, "authors": "Vismaya V.S., B.V. Nair, S.S. Muni", "title": "Deep learning for prediction and classifying the dynamical behaviour of piecewise-smooth maps", "journal": "Franklin Open", "year": "2024" },
+    { "id": 39, "authors": "S.S. Muni, S. Banerjee", "title": "Bifurcations of mode-locked periodic orbits in three-dimensional maps", "journal": "International Journal of Bifurcation and Chaos", "year": "2023" },
+    { "id": 40, "authors": "S.S. Muni", "title": "Mode-locked orbits, doubling of invariant curves in discrete Hindmarsh-Rose neuron model", "journal": "Physica Scripta", "year": "2023" },
+    { "id": 41, "authors": "T.Haridas, Upasana S.D., Vyshnavi G., M. S. Krishnan, S. S. Muni", "title": "Chaos-based audio encryption: Efficacy of 2D and 3D hyperchaotic systems", "journal": "Franklin Open", "year": "2024" },
+    { "id": 42, "authors": "S.S. Muni, R.I. McLachlan, D.J.W. Simpson", "title": "Unfolding globally resonant homoclinic tangencies", "journal": "Discrete Continuous Dynamical Systems Series A", "year": "2022" },
+    { "id": 43, "authors": "S.S. Muni, H. O. Fatoyinbo, I. Ghosh", "title": "Dynamical effects of electromagnetic flux on Chialvo neuron map: nodal and network behaviors", "journal": "International Journal of Bifurcation and Chaos", "year": "2022" },
+    { "id": 44, "authors": "S.S. Muni, R.I. McLachlan, and D.J.W. Simpson", "title": "Homoclinic tangencies with infinitely many asymptotically stable single-round periodic solutions", "journal": "Discrete Continuous Dynamical Systems Series A", "year": "2021" },
+    { "id": 45, "authors": "S.S. Muni and A. Provata", "title": "Chimera states in ring–star network of Chua circuits", "journal": "Nonlinear Dynamics", "year": "2020" },
+    { "id": 46, "authors": "V. Santos, M. Sales, S.S. Muni, J.D. Szezech Jr, A. M. Batista, S. Yanchuk, J. Kurths", "title": "Identification of single-and double-well coherence-incoherence patterns by the binary distance matrix", "journal": "Communications in Nonlinear Science and Numerical Simulation", "year": "2023" },
+    { "id": 47, "authors": "A.V. Bukh, I.A. Shepelev, E.M. Elizarov, S.S. Muni, E. Sch¨oll, G.I. Strelkova", "title": "Role of coupling delay in oscillatory activity in autonomous networks of excitable neurons with dissipation", "journal": "Chaos", "year": "2023" },
+    { "id": 48, "authors": "I. Ghosh, S.S. Muni, H.O. Fatoyinbo", "title": "On the analysis of a heterogeneous coupled network of memristive Chialvo neurons", "journal": "Nonlinear Dynamics", "year": "2023" },
+    { "id": 49, "authors": "I.A. Shepelev, A.V. Bukh, S.S. Muni, V.S. Anishchenko", "title": "Role of solitary states in forming spatiotemporal patterns in a 2D lattice of van der Pol oscillators", "journal": "Chaos Solitons & Fractals", "year": "2020" },
+    { "id": 50, "authors": "Z.T. Njitacke, S.S. Muni, S. Seth, J. Awrejcewicz, J. Kengne", "title": "Complex dynamics of a heterogeneous network of Hindmarsh Rose neurons", "journal": "Physica Scripta", "year": "2023" },
+    { "id": 51, "authors": "E. Rybalova, S.S. Muni, and G. Strelkova", "title": "Transition from chimera/solitary states to traveling waves", "journal": "Chaos", "year": "2023" },
+    { "id": 52, "authors": "S. Kanagaraj, S.S. Muni, A. Karthikeyan, R. Karthikeyan", "title": "A chaotic Hartley oscillator with fractional-order JFET and its network behaviors", "journal": "Eur. Phys. J. Spec. Top.", "year": "2023" },
+    { "id": 53, "authors": "S.S. Muni, Z. T. Njitacke, C. Feudjio, T.F. Fozin, J. Awrejcewicz", "title": "Route to chaos and chimera states in a network of memristive Hindmarsh-Rose neurons model with external excitation", "journal": "Chaos Theory and Applications", "year": "2022" },
+    { "id": 54, "authors": "Z.N. Tabekoueng, S.S. Muni, T.F. Fozin, G.D. Leutcho, J. Awrejcewicz", "title": "Coexistence of infinitely many patterns and their control in heterogeneous coupled neurons through a multistable memristive synapse", "journal": "Chaos", "year": "2022" },
+    { "id": 55, "authors": "L.K. Kengne, S.S. Muni, J. C. Chedjou, K. Kyandoghere", "title": "Various coexisting attractors, asymmetry analysis and multistability control in a 3D memristive Jerk system", "journal": "European Physical Journal Plus", "year": "2022" },
+    { "id": 56, "authors": "I.A. Shepelev, S.S. Muni, E. Sch¨oll, G.I. Strelkova", "title": "Repulsive inter-layer coupling induces antiphase synchronization", "journal": "Chaos", "year": "2021" },
+    { "id": 57, "authors": "I.A. Shepelev, S.S. Muni, T.E. Vadivasova", "title": "Synchronization of wave structures in a heterogeneous multiplex network of 2D lattices with attractive and repulsive intra-layer coupling", "journal": "Chaos", "year": "2021" },
+    { "id": 58, "authors": "I.A. Shepelev, S.S. Muni, T.E. Vadivasova", "title": "Spatiotemporal patterns in a 2D lattice with linear repulsive and nonlinear attractive coupling", "journal": "Chaos", "year": "2021" },
+    { "id": 59, "authors": "S.S. Muni, K. Rajagopal, A. Karthikeyan, S. Arun", "title": "Discrete hybrid Izhikevich neuron model: nodal and network behaviours considering electromagnetic flux coupling", "journal": "Chaos, Solitons and Fractals", "year": "2021" },
+    { "id": 60, "authors": "H.O. Fatoyinbo, S.S. Muni, A. Abidemi", "title": "Influence of Sodium Inward Current on Dynamical Behaviour of Modified Morris-Lecar Model", "journal": "European Physical Journal B", "year": "2021" },
+    { "id": 61, "authors": "M. Galchenko, V. Sheptunova, A. Karimov, E. Kopets, S. S. Muni, D. Butusov", "title": "New Approaches to Stability Analysis for Semi-Implicit Numerical Integration Methods", "journal": "Mathematics", "year": "2026" },
+    { "id": 62, "authors": "H. Baranwal, A.K.B. Chand, S.S. Muni", "title": "On Taylor Series Expansion for Discrete Systems Involving Exponential Function and Assessing Their Chaotic Strength", "journal": "International Journal of Applied and Computational Mathematics", "year": "2026" },
+    { "id": 63, "authors": "Vismaya V. S, Swetha P, Jubin K. Babu, Diya Gijo, Varada M. T, Adithya K. K, Ekaterina Kopets, S. S. Muni", "title": "A Reservoir Computing Approach for Synchronizing Discrete-Time 3D Chaotic Systems", "journal": "Big Data Cognitive Computing", "year": "2026" },
+    { "id": 64, "authors": "I.A. Shepelev, A.V. Bukh, S.S. Muni, V.S. Anishchenko", "title": "Quantifying the transition from spiral waves to spiral wave chimeras in a lattice of self-sustained oscillators", "journal": "Regular Chaotic Dynamics", "year": "2020" }
+  ],
+  "conferencePublications": [
+    { "id": 1, "authors": "H.O. Fatoyinbo, S.S. Muni, I. Ghosh, I.O. Sarumi, A. Abidemi", "title": "Numerical bifurcation analysis of improved denatured Morris-Lecar neuron model", "conference": "Decision Aid Sciences and Applications conference, IEEE", "year": "2022" },
+    { "id": 2, "authors": "S.S. Muni, S. Padhee, K.C. Pati", "title": "A Study on the Synchronization Aspect of Star Connected Identical Chua’s Circuits", "conference": "2018 IEEE International Students’ Conference on Electrical, Electronics and Computer Science (SCEECS)", "year": "2018" }
+  ],
+  "supervisoryExperience": {
+    "phd": [
+      { "name": "Vismaya V.S.", "topic": "Cyclic Periodic Synchronization in PLD mappings.", "year": "2025" }
+    ],
+    "msc": [
+      { "name": "Durga Jaishankar", "topic": "Performance of sentinel nodes in complex networks", "year": "2026" },
+      { "name": "Snehakrishnan K", "topic": "Autoencoder-Decoder and transformer framework for high dimensional nonlinear systems", "year": "2026" },
+      { "name": "Aman Sharma", "topic": "Reinforcement Learning based negative information spread in online social networks", "year": "2026" },
+      { "name": "Padamata Puja", "topic": "Detection of triadic higher order interactions in real world complex networks", "year": "2026" },
+      { "name": "Sreehari M S", "topic": "XARD: Adversarial attack framework for deep neural networks", "year": "2026" },
+      { "name": "Mohammed Fayyas", "topic": "Landslide detection via Bayesian Deep Learning framework", "year": "2026" },
+      { "name": "Anjana S. Nair", "topic": "Neurodynamics in higher order networks", "year": "2024" },
+      { "name": "Vismaya V.S.", "topic": "Deep learning approaches for predicting and classifying dynamical behaviors in piecewise smooth maps", "year": "2024" },
+      { "name": "Bharath Nair", "topic": "Deep learning and Chaos: A combined approach to image encryption and decryption", "year": "2024" },
+      { "name": "Jaidev Ram", "topic": "Spatiotemporal patterns in a lattice network of Hindmarsh-Rose neurons under strong Gaussian impulse", "year": "2025" },
+      { "name": "Swetha P", "topic": "Organization of Extreme and superstable curves on devil staircase structures", "year": "2025" },
+      { "name": "Anandik Anand", "topic": "General multimedia encryption via hyperchaotic signals and fractals", "year": "2025" }
+    ]
+  },
+  "teachingExperience": [
+    "Semantic Web and Social Network",
+    "Numerical methods",
+    "Numerical methods for deep learning",
+    "Introduction to Computational Science",
+    "Data Analytics",
+    "Computational Nonlinear Dynamics",
+    "Computational Neuroscience",
+    "Scientific Writing and Communication activity",
+    "Linear algebra, Fall Spring, 2021, Massey University, New Zealand",
+    "Financial mathematics, optimization problems, Autumn 2021, Massey University, New Zealand",
+    "Latex Workshop, Spring 2021"
+  ],
+  "academicService": {
+    "editorial": [
+      "Editorial board member at Franklin Open, Elsevier"
+    ],
+    "reviewer": [
+      "Royal Society of Philosophical Transactions",
+      "Chaos, Solitons and Fractals",
+      "Nature: Scientific Reports",
+      "Nonlinear Dynamics, Springer",
+      "AIP:Chaos",
+      "International Journal of Bifurcation and Chaos, World Scientific",
+      "Journal of Computational Science, Elsevier",
+      "International Journal of Modern Physics B., World Scientific",
+      "International Journal of Dynamics and Control",
+      "Journal of Control, Automation and Electrical Systems",
+      "Qualitative Theory of Dynamical Systems",
+      "Physica Scripta"
+    ],
+    "other": [
+      "Invited research topic/ theme coordinator in Frontiers in Physiology",
+      "Numeracy support to bachelor and master’s students (2018-present)",
+      "Latex workshop co-organiser at Massey University",
+      "Convenor of the mathematics department at Massey University",
+      "Head of the mathematics group in science club NITRKL-CORE"
+    ]
+  },
+  "outreachAndConferences": [
+    { "year": "July, 2026", "event": "International Conference on Difference Equations (ICDEA), Italy" },
+    { "year": "Jan-Feb, 2025", "event": "Faculty Induction Programme, UGC" },
+    { "year": "June, 2024", "event": "International Conference on Discrete Equations and Applications, FR" },
+    { "year": "October, 2023", "event": "National conference on contemporary progress in Mathematics, IN" },
+    { "year": "October, 2023", "event": "International Conference on Nonlinear Science and Applications, IN" },
+    { "year": "July, 2023", "event": "International Conference on Discrete Equations and Applications, Thailand" },
+    { "year": "Dec, 2022", "event": "Conference on Nonlinear System Dynamics, IN (IISER Pune)" },
+    { "year": "Nov, 2022", "event": "NCM workshop on control theory and differential equations, IN (IISER Kolkata)" },
+    { "year": "July, 2022", "event": "International Conference on Discrete Equations and Applications, FR" },
+    { "year": "July, 2022", "event": "Mid year ANZIAM meeting 2022" },
+    { "year": "Feb, 2022", "event": "ANZIAM Conference 2022" },
+    { "year": "Dec, 2021", "event": "Manawatu Wellington Applied Math Conference 2021" },
+    { "year": "Dec, 2021", "event": "New Zealand Mathematical Society conference 2021" },
+    { "year": "May, 2021", "event": "SIAM Dynamical Systems conference 2021" },
+    { "year": "November, 2021", "event": "Dynamical systems in NZ" },
+    { "year": "August, 2021", "event": "Dynamics days 2021" },
+    { "year": "June, 2021", "event": "Society of Mathematical Biology" },
+    { "year": "May, 2021", "event": "NeSI community of practice, Massey University, NZ" },
+    { "year": "February, 2021", "event": "ANZIAM conference, Australia, AU" },
+    { "year": "October, 2020", "event": "Wellington Manawatu Applied Mathematics conference" },
+    { "year": "July, 2020", "event": "3MT colloquium, Massey University, NZ" },
+    { "year": "February, 2020", "event": "ANZIAM conference, Hunter valley, AU" },
+    { "year": "November, 2019", "event": "NZMS colloquium, Massey University, NZ" },
+    { "year": "November, 2019", "event": "NZMASP conference, University of Cantebury, NZ" },
+    { "year": "August, 2018", "event": "SCEECS IEEE international student conference, National Institute of Technology, IN" },
+    { "year": "July, 2017", "event": "ICTS Summer talks, International Centre for Theoretical Science, IN" }
+  ],
+  "collaborators": [
+    "University College Dublin, Ireland",
+    "University of Gdańsk, Poland",
+    "Saratov State University / LETI, Russia",
+    "IMT Lucca, Italy",
+    "University of Dschang, Cameroon",
+    "Auckland University of Technology, New Zealand",
+    "Université Oum El Bouaghi, Algeria",
+    "Lancaster University, UK",
+    "University of São Paulo, Brazil",
+    "IISER Kolkata and other national/international collaborators"
+  ],
+  "responsibilities": [
+    "Internship Coordinator, SoDS",
+    "Question setter for DRAT / DUAT",
+    "Executive Committee member - Library Advisory / Publication & Oxford Scholarship",
+    "AISHE / Ranking / Accreditation related academic activities",
+    "University Research Committee member",
+    "Committee member for institutional academic and research activities"
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "title": "Ph.D. Supervision - Cyclic Periodic Synchronization",
+      "description": "Research on Cyclic Periodic Synchronization in PLD mappings.",
+      "category": "Research",
+      "technologies": ["Dynamical Systems", "Synchronization"],
+      "github": "",
+      "demo": "",
+      "studentsInvolved": ["Vismaya V.S. (2025)"],
+      "status": "Ongoing"
+    },
+    {
+      "id": 2,
+      "title": "Complex Networks Analysis",
+      "description": "Performance of sentinel nodes in complex networks and detection of triadic higher order interactions.",
+      "category": "Data Science",
+      "technologies": ["Network Science", "Data Analytics"],
+      "github": "",
+      "demo": "",
+      "studentsInvolved": ["Durga Jaishankar", "Padamata Puja"],
+      "status": "Completed/Ongoing"
+    },
+    {
+      "id": 3,
+      "title": "Deep Learning for Dynamical Systems",
+      "description": "Autoencoder-Decoder and transformer framework for high dimensional nonlinear systems and piecewise smooth maps.",
+      "category": "Machine Learning",
+      "technologies": ["Deep Learning", "Transformers", "Python"],
+      "github": "",
+      "demo": "",
+      "studentsInvolved": ["Snehakrishnan K", "Vismaya V.S."],
+      "status": "Ongoing"
+    },
+    {
+      "id": 4,
+      "title": "Image Encryption via Chaos",
+      "description": "A combined approach to image encryption and decryption using deep learning and chaos theory.",
+      "category": "Applied Cryptography",
+      "technologies": ["Chaos Theory", "Cryptography"],
+      "github": "",
+      "demo": "",
+      "studentsInvolved": ["Bharath Nair", "Anandik Anand"],
+      "status": "Ongoing"
+    }
+  ],
+  "studentProjectsAndCollaborators": {
+    "alumniAndScholars": [
+      {
+        "name": "Vismaya V S",
+        "role": "MSc Data Analytics, PhD Computational Nonlinear Dynamics",
+        "images": ["/images/student-projects/image46.jpg", "/images/student-projects/image39.jpg", "/images/student-projects/image17.png", "/images/student-projects/image36.png", "/images/student-projects/image1.png", "/images/student-projects/image20.png", "/images/student-projects/image27.png", "/images/student-projects/image40.png"]
+      },
+      {
+        "name": "Dr. Aishwaraya",
+        "role": "AICTE Postdoctoral Fellow",
+        "images": ["/images/student-projects/image10.jpg", "/images/student-projects/image42.png", "/images/student-projects/image5.png"]
+      },
+      {
+        "name": "Alok Hareendran",
+        "role": "MSc Student",
+        "images": ["/images/student-projects/image19.png", "/images/student-projects/image1.png", "/images/student-projects/image37.png"]
+      },
+      {
+        "name": "Anjana S Nair",
+        "role": "MSc Data Analytics and Computational Science",
+        "images": ["/images/student-projects/image3.jpg", "/images/student-projects/image24.png"]
+      },
+      {
+        "name": "Bharath V Nair",
+        "role": "MSc Data Analytics and Computational Science",
+        "images": ["/images/student-projects/image48.png", "/images/student-projects/image32.png"]
+      },
+      {
+        "name": "Harisankar R",
+        "role": "MSc Electronics",
+        "images": ["/images/student-projects/image38.jpg", "/images/student-projects/image41.png", "/images/student-projects/image44.png"]
+      },
+      {
+        "name": "Anandik N Anand",
+        "role": "MSc Data Analytics and Bio AI",
+        "images": ["/images/student-projects/image50.png", "/images/student-projects/image43.png"]
+      },
+      {
+        "name": "Jaidev S Ram",
+        "role": "MSc Data Analytics and Computational Science",
+        "images": ["/images/student-projects/image8.png", "/images/student-projects/image34.png"]
+      },
+      {
+        "name": "Aman Sharma",
+        "role": "MSc Data Analytics and Computational Science (NOW: CHUB)",
+        "images": ["/images/student-projects/image6.png", "/images/student-projects/image13.png"]
+      },
+      {
+        "name": "Kavya Sri",
+        "role": "MSc Data Analytics and Computational Science",
+        "images": ["/images/student-projects/image25.png", "/images/student-projects/image49.png"]
+      },
+      {
+        "name": "Sreehari M S",
+        "role": "MSc Data Analytics and Computational Science",
+        "images": ["/images/student-projects/image28.png"]
+      },
+      {
+        "name": "Durga Jaishankar",
+        "role": "MSc Data Analytics and Computational Science",
+        "images": ["/images/student-projects/image4.png"]
+      }
+    ],
+    "ongoingProjects": [
+      {
+        "title": "Metro Passenger Prediction using Machine Learning Algorithms",
+        "students": ["Abikrishnan M S", "Aleena V J", "Rehan Biju"],
+        "images": ["/images/student-projects/image22.jpg", "/images/student-projects/image9.png"]
+      },
+      {
+        "title": "Comparative Evaluation of ML, DL, and TL Approaches for Infant Cry Classification",
+        "students": ["Aleena V J", "Krishnanjana J J", "Gokul A R", "Vismaya V S", "Swetha P"],
+        "images": ["/images/student-projects/image21.png", "/images/student-projects/image12.png", "/images/student-projects/image7.png", "/images/student-projects/image15.png", "/images/student-projects/image47.png"]
+      },
+      {
+        "title": "Omni-Fake: Benchmarking Unified Multimodal Social Media Deepfake Detection",
+        "students": ["Gokul A R", "Krishnanjana JJ"],
+        "images": ["/images/student-projects/image7.png", "/images/student-projects/image12.png", "/images/student-projects/image31.png"]
+      },
+      {
+        "title": "RDPA: A concealed and perilous physical adversarial attack for nighttime traffic signs recognition",
+        "students": ["Ashliya M Riyaz", "Drisya Krishna K V", "Amrutha"],
+        "images": ["/images/student-projects/image29.png", "/images/student-projects/image23.png"]
+      },
+      {
+        "title": "Prediction of Basins of Attraction using Reservoir Computing and Next Gen Reservoir Computing",
+        "students": ["G E Evans Devakrubakar"],
+        "images": ["/images/student-projects/image16.jpg", "/images/student-projects/image11.png"]
+      },
+      {
+        "title": "Next-Generation Reservoir Computing for Basin Reconstruction in Piecewise-Smooth Nonlinear Maps",
+        "students": ["A Muhammed Khaise", "Aleena Antony", "Fidal Govind", "Lubaba sadiya", "Angel Treesa John", "Adithyan Biju", "Shajiya minnath"],
+        "images": ["/images/student-projects/image30.jpg", "/images/student-projects/image2.png", "/images/student-projects/image45.png"]
+      },
+      {
+        "title": "A Unified Multi-Task Transformer Framework for Automated Geospatial Feature Extraction from High-Resolution UAV Orthophotos",
+        "students": ["Harikrishnan S M", "Aaron R", "Bainty Kaur Chugh", "Ananthan S"],
+        "images": ["/images/student-projects/image14.png", "/images/student-projects/image33.jpg"]
+      },
+      {
+        "title": "EmoGRACE: aspect-based emotion analysis for social media data",
+        "students": ["Krishnendhu M S", "Hemalekshmi R"],
+        "collaboration": "Working in Collaboration with Dr. Sebastian Schmidt from Interdisciplinary Transformation University, Austria",
+        "images": ["/images/student-projects/image35.jpg", "/images/student-projects/image18.jpg", "/images/student-projects/image26.jpg"]
+      }
+    ]
+  }
+}
