@@ -44,7 +44,7 @@ export const AboutSection = () => {
         {/* Right Column: Skills & References */}
         <div className="space-y-8">
           <Card className="p-8 h-fit">
-            <h3 className="text-2xl font-bold mb-6 text-accent">Computer Skills</h3>
+            <h3 className="text-2xl font-bold mb-6 text-accent">Computer Skillssss</h3>
             <div className="flex flex-wrap gap-3">
               {about.skills.map((skill, index) => (
                 <span 
