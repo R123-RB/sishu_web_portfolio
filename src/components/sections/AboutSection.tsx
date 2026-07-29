@@ -34,7 +34,6 @@ export const AboutSection = () => {
             <div className="space-y-6">
               {about.education.map((edu) => (
                 <div key={edu.id} className="border-l-2 border-zinc-800 pl-4">
-                  <h4 className="text-lg font-bold text-white mt-1">{edu.degree}</h4>
                   <p className="text-gray-400 font-medium">{edu.institution}</p>
                 </div>
               ))}
