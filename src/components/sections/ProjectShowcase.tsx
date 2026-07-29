@@ -38,7 +38,7 @@ export const ProjectShowcase = () => {
     : projects.filter(p => p.category === filter);
 
   return (
-    <Section id="projects" title="Project Showcase" subtitle="Explore the cutting-edge projects built by our students in the CND Lab.">
+    <Section id="projects" title="Project Showcase" subtitle="Explore the cutting-edge projects built by our students in the CNLD Lab.">
       
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-12 justify-center md:justify-start">
