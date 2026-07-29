@@ -2,7 +2,7 @@ import json
 
 data = {
   "hero": {
-    "headline": "Building Future AI Engineers & Data Professionals",
+    "headline": "Building the Future Empowering the Next Generation of Data Scientists",
     "subheading": "Assistant Professor | Digital University Kerala | Top 2% Scientist (Stanford University / Elsevier)",
     "stats": {
       "publications": 66,
