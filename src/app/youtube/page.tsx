@@ -1,5 +1,4 @@
 import { PlaySquare } from 'lucide-react';
-import Image from 'next/image';
 
 export const metadata = {
   title: 'YouTube Playlists | Dr. Sishu Shankar Muni',
@@ -13,7 +12,8 @@ const playlists = [
     videoCount: 3,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-blue-900 to-slate-900"
+    bg: "from-blue-900 to-slate-900",
+    image: "/images/youtube/playlist-1.png" // Replace with actual path in public folder
   },
   {
     id: 2,
@@ -21,7 +21,8 @@ const playlists = [
     videoCount: 11,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "Updated yesterday",
-    bg: "from-purple-900 to-slate-900"
+    bg: "from-purple-900 to-slate-900",
+    image: "/images/youtube/playlist-2.png"
   },
   {
     id: 3,
@@ -29,7 +30,8 @@ const playlists = [
     videoCount: 13,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-emerald-900 to-slate-900"
+    bg: "from-emerald-900 to-slate-900",
+    image: "/images/youtube/playlist-3.png"
   },
   {
     id: 4,
@@ -37,7 +39,8 @@ const playlists = [
     videoCount: 20,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-amber-900 to-slate-900"
+    bg: "from-amber-900 to-slate-900",
+    image: "/images/youtube/playlist-4.png"
   },
   {
     id: 5,
@@ -45,7 +48,8 @@ const playlists = [
     videoCount: 15,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-rose-900 to-slate-900"
+    bg: "from-rose-900 to-slate-900",
+    image: "/images/youtube/playlist-5.png"
   },
   {
     id: 6,
@@ -53,7 +57,8 @@ const playlists = [
     videoCount: 21,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-indigo-900 to-slate-900"
+    bg: "from-indigo-900 to-slate-900",
+    image: "/images/youtube/playlist-6.png"
   },
   {
     id: 7,
@@ -61,7 +66,8 @@ const playlists = [
     videoCount: 33,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-cyan-900 to-slate-900"
+    bg: "from-cyan-900 to-slate-900",
+    image: "/images/youtube/playlist-7.png"
   },
   {
     id: 8,
@@ -69,7 +75,8 @@ const playlists = [
     videoCount: 28,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-teal-900 to-slate-900"
+    bg: "from-teal-900 to-slate-900",
+    image: "/images/youtube/playlist-8.png"
   },
   {
     id: 9,
@@ -77,7 +84,8 @@ const playlists = [
     videoCount: 17,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-fuchsia-900 to-slate-900"
+    bg: "from-fuchsia-900 to-slate-900",
+    image: "/images/youtube/playlist-9.png"
   },
   {
     id: 10,
@@ -85,7 +93,8 @@ const playlists = [
     videoCount: 18,
     link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
     updated: "View full playlist",
-    bg: "from-orange-900 to-slate-900"
+    bg: "from-orange-900 to-slate-900",
+    image: "/images/youtube/playlist-10.png"
   }
 ];
 
@@ -127,16 +136,30 @@ export default function YouTubePage() {
             rel="noopener noreferrer"
             className="group block"
           >
-            {/* Thumbnail Placeholder */}
+            {/* Thumbnail */}
             <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-3 border border-zinc-800 bg-zinc-900 group-hover:border-zinc-600 transition-colors">
-              {/* Fake thumbnail background to resemble slides/notes */}
+              {/* Background gradient (Fallback if image missing) */}
               <div className={`absolute inset-0 bg-gradient-to-br opacity-40 ${playlist.bg}`} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <PlaySquare className="w-12 h-12 text-white/50 group-hover:text-white/80 transition-colors group-hover:scale-110 duration-300" />
+              
+              {/* Cover Image */}
+              {playlist.image && (
+                <img 
+                  src={playlist.image} 
+                  alt={playlist.title} 
+                  className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    // Hide image if it fails to load so the gradient shows instead
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              )}
+
+              <div className="absolute inset-0 flex items-center justify-center z-20">
+                <PlaySquare className="w-12 h-12 text-white/50 group-hover:text-white/80 transition-colors group-hover:scale-110 duration-300 drop-shadow-md" />
               </div>
               
-              {/* Overlay with video count (YouTube style) */}
-              <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded flex items-center gap-1.5">
+              {/* Overlay with video count */}
+              <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded flex items-center gap-1.5 z-30">
                 <PlaySquare className="w-3 h-3" />
                 {playlist.videoCount} videos
               </div>
