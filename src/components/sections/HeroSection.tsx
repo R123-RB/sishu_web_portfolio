@@ -17,6 +17,7 @@ const LinkedinIcon = ({ className }: { className?: string }) => (
 export const HeroSection = () => {
   const { hero } = portfolioData;
   const router = useRouter();
+  const [profileImgError, setProfileImgError] = React.useState(false);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-32">
@@ -34,15 +35,18 @@ export const HeroSection = () => {
           className="mb-8 relative group"
         >
           <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-          <img 
-            src="/placeholder-profile.jpg" 
-            alt="Dr. Sishu Shankar Muni" 
-            className="relative w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-2 border-zinc-800 bg-zinc-900"
-            onError={(e) => {
-              // Fallback if image doesn't exist yet
-              (e.target as HTMLImageElement).src = "https://ui-avatars.com/api/?name=Sishu+Muni&background=2563EB&color=fff&size=200";
-            }}
-          />
+          {profileImgError ? (
+            <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-zinc-800 bg-zinc-900 flex items-center justify-center text-3xl font-bold text-white">
+              SM
+            </div>
+          ) : (
+            <img 
+              src="/placeholder-profile.jpg" 
+              alt="Dr. Sishu Shankar Muni" 
+              className="relative w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-2 border-zinc-800 bg-zinc-900"
+              onError={() => setProfileImgError(true)}
+            />
+          )}
         </motion.div>
 
         {/* Headline */}

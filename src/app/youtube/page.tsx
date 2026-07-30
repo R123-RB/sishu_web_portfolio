@@ -1,5 +1,5 @@
 import { PlaySquare } from 'lucide-react';
-
+import { PlaylistThumbnail } from '@/components/ui/PlaylistThumbnail';
 export const metadata = {
   title: 'YouTube Playlists | Dr. Sishu Shankar Muni',
   description: 'Educational content and playlists on Data Science, AI, and Computational Science.',
@@ -138,17 +138,7 @@ export default function YouTubePage() {
           >
             {/* Thumbnail */}
             <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-3 border border-zinc-800 bg-zinc-900 group-hover:border-zinc-600 transition-colors">
-              {/* Background gradient (Fallback if image missing) */}
-              <div className={`absolute inset-0 bg-gradient-to-br opacity-40 ${playlist.bg}`} />
-              
-              {/* Cover Image */}
-              {playlist.image && (
-                <img 
-                  src={playlist.image} 
-                  alt={playlist.title} 
-                  className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105"
-                />
-              )}
+              <PlaylistThumbnail image={playlist.image} title={playlist.title} bgClass={playlist.bg} />
 
               <div className="absolute inset-0 flex items-center justify-center z-20">
                 <PlaySquare className="w-12 h-12 text-white/50 group-hover:text-white/80 transition-colors group-hover:scale-110 duration-300 drop-shadow-md" />
