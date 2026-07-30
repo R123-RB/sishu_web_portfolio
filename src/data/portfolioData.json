@@ -24,11 +24,11 @@
     ],
     "skills": ["JAVA", "C", "C++", "Python", "R", "Haskell", "SQL", "MATLAB", "NetLogo", "PPlane"],
     "references": [
-      "Dr. David J.W. Simpson, Massey University, NZ, E-mail: d.j.w.simpson@massey.ac.nz",
-      "Dist. Prof. Robert I. McLachlan, Massey University, NZ, E-mail: R.McLachlan@massey.ac.nz",
-      "Prof. Soumitro Banerjee, IISER Kolkata, IN, E-mail: soumitro@iiserkol.ac.in",
-      "Prof. Astero Provata, National Center for Scientific Research ‘Demokritos’ 15310 Athens, Greece, E-mail: a.provata@inn.demokritos.gr",
-      "Prof. Kishor Chandra Pati, NIT Rourkela, IN, E-mail: kcpati@nitrkl.ac.in"
+      "Dr. David J.W. Simpson, Massey University, NZ",
+      "Dist. Prof. Robert I. McLachlan, Massey University, NZ",
+      "Prof. Soumitro Banerjee, IISER Kolkata, IN",
+      "Prof. Astero Provata, National Center for Scientific Research ‘Demokritos’ 15310 Athens, Greece",
+      "Prof. Kishor Chandra Pati, NIT Rourkela, IN"
     ]
   },
   "awardsAndScholarships": [
