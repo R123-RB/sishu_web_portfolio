@@ -147,10 +147,6 @@ export default function YouTubePage() {
                   src={playlist.image} 
                   alt={playlist.title} 
                   className="absolute inset-0 w-full h-full object-cover z-10 transition-transform duration-500 group-hover:scale-105"
-                  onError={(e) => {
-                    // Hide image if it fails to load so the gradient shows instead
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
                 />
               )}
 
