@@ -358,12 +358,17 @@
       {
         "name": "Sreehari M S",
         "role": "MSc Data Analytics and Computational Science",
-        "images": ["/images/student-projects/image28.png"]
+        "images": ["/images/student-projects/image28.png", "/images/student-projects/image51.png"]
       },
       {
         "name": "Durga Jaishankar",
         "role": "MSc Data Analytics and Computational Science",
-        "images": ["/images/student-projects/image4.png"]
+        "images": ["/images/student-projects/image4.png", "/images/student-projects/image52.png"]
+      },
+      {
+        "name": "Sneha Krishnan",
+        "role": "",
+        "images": ["/images/student-projects/image53.png"]
       }
     ],
     "ongoingProjects": [
