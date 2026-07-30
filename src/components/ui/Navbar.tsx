@@ -40,7 +40,7 @@ export const Navbar = () => {
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold tracking-tighter text-white z-50">
-            Dr. Sishu<span className="text-primary">.</span>
+            Dr. Sishu Shankar Muni<span className="text-primary">.</span>
           </Link>
 
           {/* Desktop Navigation */}

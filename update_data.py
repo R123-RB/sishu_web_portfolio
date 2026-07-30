@@ -16,9 +16,9 @@ data = {
   "about": {
     "introduction": "I am Dr. Sishu Shankar Muni, an Assistant Professor at the School of Digital Sciences, Digital University Kerala. My area of research includes Dynamical systems, Nonlinear dynamics, network of oscillators, data science, High Performance Computing, and Machine Learning.",
     "education": [
-      { "id": 1, "year": "2022", "degree": "Ph.D. Mathematics", "institution": "Massey University, New Zealand", "details": "Thesis: Globally resonant homoclinic tangencies. Supervisors: Dr. David Simpson, Dist. Prof. Robert McLachlan." },
-      { "id": 2, "year": "2018", "degree": "M.Sc. Mathematics", "institution": "National Institute of Technology Rourkela, India", "details": "CGPA: 8.85. Supervisor: Prof. K.C. Pati." },
-      { "id": 3, "year": "2016", "degree": "B.Sc. Mathematics", "institution": "National Institute of Technology Rourkela, India", "details": "CGPA: 8.92" }
+      { "id": 1, "degree": "Ph.D. Mathematics", "institution": "Massey University, New Zealand", "details": "Thesis: Globally resonant homoclinic tangencies. Supervisors: Dr. David Simpson, Dist. Prof. Robert McLachlan." },
+      { "id": 2, "degree": "M.Sc. Mathematics", "institution": "National Institute of Technology Rourkela, India", "details": "CGPA: 8.85. Supervisor: Prof. K.C. Pati." },
+      { "id": 3, "degree": "B.Sc. Mathematics", "institution": "National Institute of Technology Rourkela, India", "details": "CGPA: 8.92" }
     ],
     "experience": [
       { "id": 1, "year": "2023-present", "role": "Assistant Professor", "institution": "School of Digital Sciences, Digital University Kerala" },

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import portfolioData from '@/data/portfolioData.json';
-import { ArrowRight, BookOpen, Users, Trophy } from 'lucide-react';
+import { ArrowRight, BookOpen, Users, Linkedin, GraduationCap } from 'lucide-react';
 
 export const HeroSection = () => {
   const { hero } = portfolioData;
@@ -55,10 +55,27 @@ export const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-xl text-gray-400 mb-10 max-w-2xl leading-relaxed"
+          className="text-xl text-gray-400 mb-8 max-w-2xl leading-relaxed"
         >
           {hero.subheading}
         </motion.p>
+
+        {/* Social Links */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="flex flex-wrap items-center justify-center gap-6 mb-10"
+        >
+          <a href="https://www.linkedin.com/in/sishu-shankar-muni-2a8505110?utm_source=share_via&utm_content=profile&utm_medium=member_android" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-300 hover:text-blue-500 transition-colors">
+            <Linkedin className="w-6 h-6" />
+            <span className="font-medium">LinkedIn</span>
+          </a>
+          <a href="https://scholar.google.com/citations?user=HqDJFc0AAAAJ&hl=en" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-300 hover:text-blue-400 transition-colors">
+            <GraduationCap className="w-6 h-6" />
+            <span className="font-medium">Google Scholar</span>
+          </a>
+        </motion.div>
 
         {/* Action Buttons */}
         <motion.div 
