@@ -46,8 +46,8 @@ export const HeroSection = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 max-w-4xl leading-tight"
         >
-          Building Future <br className="hidden md:block" />
-          <span className="text-gradient">AI Engineers & Data Professionals</span>
+          Building the Future <br className="hidden md:block" />
+          <span className="text-gradient">Empowering the Next Generation of Data Scientists</span>
         </motion.h1>
 
         {/* Subheading */}
