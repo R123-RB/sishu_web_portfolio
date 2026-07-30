@@ -6,7 +6,13 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import portfolioData from '@/data/portfolioData.json';
-import { ArrowRight, BookOpen, Users, Linkedin, GraduationCap } from 'lucide-react';
+import { ArrowRight, BookOpen, Users, GraduationCap } from 'lucide-react';
+
+const LinkedinIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+  </svg>
+);
 
 export const HeroSection = () => {
   const { hero } = portfolioData;
@@ -46,8 +52,8 @@ export const HeroSection = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 max-w-4xl leading-tight"
         >
-          Building the Future <br className="hidden md:block" />
-          <span className="text-gradient">Empowering the Next Generation of Data Scientists</span>
+          Building Future <br className="hidden md:block" />
+          <span className="text-gradient">AI Engineers & Data Professionals</span>
         </motion.h1>
 
         {/* Subheading */}
@@ -68,7 +74,7 @@ export const HeroSection = () => {
           className="flex flex-wrap items-center justify-center gap-6 mb-10"
         >
           <a href="https://www.linkedin.com/in/sishu-shankar-muni-2a8505110?utm_source=share_via&utm_content=profile&utm_medium=member_android" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-300 hover:text-blue-500 transition-colors">
-            <Linkedin className="w-6 h-6" />
+            <LinkedinIcon className="w-6 h-6" />
             <span className="font-medium">LinkedIn</span>
           </a>
           <a href="https://scholar.google.com/citations?user=HqDJFc0AAAAJ&hl=en" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-300 hover:text-blue-400 transition-colors">
