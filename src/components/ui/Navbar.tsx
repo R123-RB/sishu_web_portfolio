@@ -26,6 +26,7 @@ export const Navbar = () => {
     { name: 'Research', href: '/research' },
     { name: 'Experience', href: '/experience' },
     { name: 'Projects', href: '/projects' },
+    { name: 'Computational Thinking', href: '/computational-thinking' },
     { name: 'YouTube', href: '/youtube' },
   ];
 
