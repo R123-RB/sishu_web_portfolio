@@ -10,7 +10,7 @@ const playlists = [
     id: 1,
     title: "Computational Nonlinear Dynamics-2026",
     videoCount: 3,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=bm8EjQZ_K10&list=PLE9x46o-tY0M",
     updated: "View full playlist",
     bg: "from-blue-900 to-slate-900",
     image: "/images/youtube/playlist-1.png" // Replace with actual path in public folder
@@ -19,7 +19,7 @@ const playlists = [
     id: 2,
     title: "Semantic Web and Social Network Analysis",
     videoCount: 11,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=Zb0fwVVqEw4&list=PLGurAv142Dqw",
     updated: "Updated yesterday",
     bg: "from-purple-900 to-slate-900",
     image: "/images/youtube/playlist-2.png"
@@ -28,7 +28,7 @@ const playlists = [
     id: 3,
     title: "Numerical Methods 2026",
     videoCount: 13,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=RdlX9fov0QQ&list=PLnKpV0-HBiwWCDxiWRzzNsn-OKASJk38v",
     updated: "View full playlist",
     bg: "from-emerald-900 to-slate-900",
     image: "/images/youtube/playlist-3.png"
@@ -37,7 +37,7 @@ const playlists = [
     id: 4,
     title: "Introduction to Data Analytics",
     videoCount: 20,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=8tYtThpheYk&list=PLnKpV0-HBiwUtgwJ0jrn5HvSlJxWtd8tY",
     updated: "View full playlist",
     bg: "from-amber-900 to-slate-900",
     image: "/images/youtube/playlist-4.png"
@@ -46,7 +46,7 @@ const playlists = [
     id: 5,
     title: "2025-ComputationalNonlinearDynami...",
     videoCount: 15,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=4yfDLZUikqM&list=PLnKpV0-HBiwVa2IULIluTaBnAOYz4iFQ9",
     updated: "View full playlist",
     bg: "from-rose-900 to-slate-900",
     image: "/images/youtube/playlist-5.png"
@@ -55,7 +55,7 @@ const playlists = [
     id: 6,
     title: "Numerical Methods for Deep Learning (2025)",
     videoCount: 21,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=BXNxksHbkDo&list=PLnKpV0-HBiwVJ0NXnt-SAKu845NiFsz3G",
     updated: "View full playlist",
     bg: "from-indigo-900 to-slate-900",
     image: "/images/youtube/playlist-6.png"
@@ -64,7 +64,7 @@ const playlists = [
     id: 7,
     title: "Introduction to Computational Science (2024)",
     videoCount: 33,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=lrMZRjeQOmY&list=PLnKpV0-HBiwWa6H-238Uz45ziqkYO_nSN",
     updated: "View full playlist",
     bg: "from-cyan-900 to-slate-900",
     image: "/images/youtube/playlist-7.png"
@@ -73,7 +73,7 @@ const playlists = [
     id: 8,
     title: "Computational Nonlinear Dynamics(2024)",
     videoCount: 28,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=AxiunPbnE4k&list=PLnKpV0-HBiwWOqt1-i9Dh4ErUxFMdU8AI",
     updated: "View full playlist",
     bg: "from-teal-900 to-slate-900",
     image: "/images/youtube/playlist-8.png"
@@ -82,7 +82,7 @@ const playlists = [
     id: 9,
     title: "Research_Nonlinear_Dynamics",
     videoCount: 17,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=cjW0mC6jvOw&list=PLnKpV0-HBiwVOkDqbXmiesWuFT6XU77bl",
     updated: "View full playlist",
     bg: "from-fuchsia-900 to-slate-900",
     image: "/images/youtube/playlist-9.png"
@@ -91,7 +91,7 @@ const playlists = [
     id: 10,
     title: "Numerical Methods For Computational Science 2024",
     videoCount: 18,
-    link: "https://youtube.com/@chaos_sishu?si=wOWe_pP9HBj1tj02",
+    link: "https://www.youtube.com/watch?v=t4oA_Vd9l6o&list=PLnKpV0-HBiwWLeUkrd7HrShTEeWVTsnB1",
     updated: "View full playlist",
     bg: "from-orange-900 to-slate-900",
     image: "/images/youtube/playlist-10.png"
