@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Graph Gallery — Special Classes of Graphs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board:#16261d;
+    --board-2:#1b2e23;
+    --board-edge:#0f1e16;
+    --chalk:#f2efe6;
+    --chalk-dim:rgba(242,239,230,0.55);
+    --chalk-faint:rgba(242,239,230,0.16);
+    --yellow:#f2c14e;
+    --coral:#ef8763;
+    --sky:#7fc7dc;
+    --violet:#c99be0;
+    --line-idle:rgba(242,239,230,0.28);
+    box-sizing:border-box;
+  }
+  *{box-sizing:inherit;}
+  html,body{
+    margin:0;
+    height:100%;
+    background:var(--board);
+  }
+  body{
+    font-family:'Space Grotesk',sans-serif;
+    color:var(--chalk);
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    overflow-x:hidden;
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+
+  /* chalk dust texture */
+  .board-texture{
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      radial-gradient(rgba(242,239,230,0.035) 1px, transparent 1px),
+      radial-gradient(rgba(242,239,230,0.02) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 2px 3px;
+    mix-blend-mode:overlay;
+  }
+  .board-frame{
+    position:fixed; inset:10px; pointer-events:none; z-index:0;
+    border:14px solid #5a3a24;
+    border-radius:6px;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.55), 0 0 30px rgba(0,0,0,0.4);
+    opacity:0.9;
+  }
+
+  .wrap{
+    position:relative; z-index:1;
+    max-width:1180px;
+    margin:0 auto;
+    padding:34px 30px 40px;
+  }
+
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+    border-bottom:1px dashed var(--chalk-faint);
+    padding-bottom:18px;
+  }
+  h1{
+    font-family:'Kalam',cursive;
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    margin:0 0 4px;
+    letter-spacing:0.3px;
+    color:var(--chalk);
+    text-shadow:0 0 12px rgba(242,239,230,0.18);
+  }
+  header p{
+    margin:0; color:var(--chalk-dim); font-size:14.5px; max-width:520px; line-height:1.5;
+  }
+  .signature{
+    font-family:'Kalam',cursive;
+    color:var(--chalk-dim);
+    font-size:14px;
+    white-space:nowrap;
+  }
+
+  nav.tabs{
+    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px;
+  }
+  .tab{
+    display:flex; align-items:center; gap:9px;
+    background:transparent;
+    border:1.5px solid var(--chalk-faint);
+    color:var(--chalk-dim);
+    font-family:'Space Grotesk',sans-serif;
+    font-size:14.5px; font-weight:500;
+    padding:10px 16px 10px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:border-color .2s ease, color .2s ease, background .2s ease, transform .15s ease;
+  }
+  .tab:hover{ transform:translateY(-1px); }
+  .tab svg{ width:20px; height:20px; opacity:0.75; }
+  .tab.active{
+    color:var(--board);
+    background:var(--accent, var(--yellow));
+    border-color:var(--accent, var(--yellow));
+    font-weight:600;
+  }
+  .tab.active svg{ opacity:1; }
+
+  main{
+    display:grid;
+    grid-template-columns: 220px minmax(0,1fr) 300px;
+    gap:20px;
+    align-items:start;
+  }
+  @media (max-width: 900px){
+    main{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background:var(--board-2);
+    border:1px solid var(--chalk-faint);
+    border-radius:14px;
+    padding:18px;
+  }
+
+  .controls h2, .stats h2{
+    font-family:'Kalam',cursive;
+    font-size:18px;
+    margin:0 0 14px;
+    color:var(--chalk);
+  }
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:flex; justify-content:space-between;
+    font-size:13px; color:var(--chalk-dim); margin-bottom:8px;
+  }
+  .field label b{ color:var(--chalk); font-weight:600; }
+  input[type=range]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:4px; border-radius:2px;
+    background:var(--chalk-faint);
+    outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:17px; height:17px; border-radius:50%;
+    background:var(--accent, var(--yellow));
+    border:2px solid var(--board);
+    cursor:pointer;
+    box-shadow:0 0 0 3px rgba(242,239,230,0.08);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:17px; height:17px; border-radius:50%;
+    background:var(--accent, var(--yellow));
+    border:2px solid var(--board);
+    cursor:pointer;
+  }
+
+  .toggle-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 0; border-top:1px dashed var(--chalk-faint);
+    font-size:13.5px; color:var(--chalk-dim);
+  }
+  .toggle-row:first-of-type{ border-top:none; }
+  .switch{
+    width:38px; height:22px; border-radius:12px;
+    background:var(--chalk-faint);
+    position:relative; cursor:pointer; flex:0 0 auto;
+    transition:background .2s ease;
+  }
+  .switch::after{
+    content:""; position:absolute; top:2px; left:2px;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--chalk); transition:transform .2s ease;
+  }
+  .switch.on{ background:var(--accent, var(--yellow)); }
+  .switch.on::after{ transform:translateX(16px); background:var(--board); }
+
+  button.action{
+    width:100%; margin-top:6px;
+    background:transparent;
+    border:1.5px solid var(--accent, var(--yellow));
+    color:var(--accent, var(--yellow));
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px;
+    padding:10px; border-radius:9px; cursor:pointer;
+    transition:background .2s ease, color .2s ease;
+  }
+  button.action:hover{ background:var(--accent, var(--yellow)); color:var(--board); }
+  button.ghost{
+    border-color:var(--chalk-faint); color:var(--chalk-dim);
+  }
+  button.ghost:hover{ background:var(--chalk-faint); color:var(--chalk); }
+
+  .stage-wrap{
+    background:var(--board-2);
+    border:1px solid var(--chalk-faint);
+    border-radius:14px;
+    padding:8px;
+    position:relative;
+    min-height:420px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #stage{ width:100%; height:auto; display:block; overflow:visible; }
+  .hint{
+    position:absolute; bottom:10px; left:0; right:0;
+    text-align:center; font-size:12.5px; color:var(--chalk-dim);
+    font-family:'Kalam',cursive;
+    pointer-events:none;
+  }
+  .flash{
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    background:rgba(239,135,99,0.14);
+    border:1px solid var(--coral);
+    color:var(--coral);
+    font-size:12.5px; padding:6px 12px; border-radius:8px;
+    opacity:0; transition:opacity .25s ease;
+    pointer-events:none; white-space:nowrap;
+  }
+  .flash.show{ opacity:1; }
+
+  .stats .desc{
+    font-size:13.5px; line-height:1.6; color:var(--chalk-dim);
+    margin-bottom:16px; padding-bottom:14px;
+    border-bottom:1px dashed var(--chalk-faint);
+  }
+  .stats .desc b{ color:var(--chalk); }
+
+  .metric{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:8px 0; border-bottom:1px dashed var(--chalk-faint);
+    font-size:13.5px;
+  }
+  .metric:last-of-type{ border-bottom:none; }
+  .metric .k{ color:var(--chalk-dim); }
+  .metric .v{ font-weight:600; font-size:16px; font-variant-numeric:tabular-nums; }
+
+  .formula-box{
+    margin-top:14px; padding:12px 14px;
+    background:rgba(242,239,230,0.05);
+    border-left:3px solid var(--accent, var(--yellow));
+    border-radius:6px;
+    font-style:italic; font-size:15px; letter-spacing:0.2px;
+  }
+  .frac{ display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; margin:0 3px; line-height:1.15; }
+  .frac .num{ padding:0 2px; border-bottom:1.2px solid var(--chalk); }
+  .frac .den{ padding:0 2px; }
+  sub{ font-size:11px; }
+
+  .legend{
+    display:flex; gap:14px; flex-wrap:wrap;
+    margin-top:14px; font-size:12px; color:var(--chalk-dim);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+
+  footer{
+    margin-top:22px; text-align:center;
+    font-family:'Kalam',cursive; font-size:13px; color:var(--chalk-dim);
+  }
+
+  /* svg element styling */
+  .vtx{ cursor:pointer; transition:r .15s ease, filter .15s ease; }
+  .vtx-label{ font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600; fill:var(--board); pointer-events:none; }
+  .deg-label{ font-family:'Space Grotesk',sans-serif; font-size:10.5px; font-weight:600; pointer-events:none; }
+  .edge{ transition:stroke .15s ease, stroke-width .15s ease, opacity .2s ease; }
+
+  @keyframes popIn{
+    from{ opacity:0; transform:scale(0.4); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  @keyframes drawEdge{
+    from{ opacity:0; }
+    to{ opacity:1; }
+  }
+</style>
+</head>
+<body>
+<div class="board-texture"></div>
+<div class="board-frame"></div>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Graph Gallery</h1>
+      <p>A live blackboard for four special graph families. Drag the sliders, click the vertices, and watch the structure — and its formulas — respond.</p>
+    </div>
+    <div class="signature">chalk &amp; circuits, live demo</div>
+  </header>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <main>
+    <section class="panel controls">
+      <h2>Controls</h2>
+      <div id="fields"></div>
+
+      <div class="toggle-row">
+        <span>Label degrees</span>
+        <div class="switch" id="toggleDegrees"></div>
+      </div>
+      <div class="toggle-row">
+        <span>Explore mode</span>
+        <div class="switch" id="toggleExplore"></div>
+      </div>
+
+      <button class="action" id="animateBtn">▸ Animate build</button>
+      <button class="action ghost" id="resetBtn">Reset edges</button>
+    </section>
+
+    <section class="stage-wrap">
+      <svg id="stage" viewBox="0 0 640 460"></svg>
+      <div class="flash" id="flash"></div>
+      <div class="hint" id="hint">hover a vertex to see its degree</div>
+    </section>
+
+    <section class="panel stats">
+      <h2 id="statsTitle">Complete Graph</h2>
+      <div class="desc" id="statsDesc"></div>
+      <div class="metric"><span class="k">Vertices</span><span class="v" id="mVertices">—</span></div>
+      <div class="metric"><span class="k">Edges (current)</span><span class="v" id="mEdges">—</span></div>
+      <div class="metric"><span class="k" id="mExtraLabel">Every vertex's degree</span><span class="v" id="mExtra">—</span></div>
+      <div class="formula-box" id="formulaBox"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+  </main>
+
+  <footer>tip — switch on <b>Explore mode</b> on the Bipartite tab and try clicking two dots on the <i>same</i> side.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var NS = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById('stage');
+  var VB_W = 640, VB_H = 460;
+
+  var COLORS = {
+    complete: {accent:'#f2c14e', name:'Complete'},
+    cycle:    {accent:'#7fc7dc', name:'Cycle'},
+    wheel:    {accent:'#ef8763', name:'Wheel'},
+    bipartite:{accent:'#c99be0', name:'Bipartite'}
+  };
+
+  var ICONS = {
+    complete: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><circle cx="12" cy="12" r="2"/><path d="M5 5L19 5M5 5L5 19M5 5L19 19M5 5L12 12M19 5L5 19M19 5L19 19M19 5L12 12M5 19L19 19M5 19L12 12M19 19L12 12"/></svg>',
+    cycle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="4" r="1.8"/><circle cx="19" cy="9" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="5" cy="9" r="1.8"/><path d="M12 4L19 9L16.5 17L7.5 17L5 9Z"/></svg>',
+    wheel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="3.5" r="1.6"/><circle cx="19" cy="8.5" r="1.6"/><circle cx="16.5" cy="17" r="1.6"/><circle cx="7.5" cy="17" r="1.6"/><circle cx="5" cy="8.5" r="1.6"/><path d="M12 3.5L19 8.5L16.5 17L7.5 17L5 8.5Z"/><path d="M12 12L12 3.5M12 12L19 8.5M12 12L16.5 17M12 12L7.5 17M12 12L5 8.5"/></svg>',
+    bipartite: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="5" r="1.8"/><circle cx="5" cy="12" r="1.8"/><circle cx="5" cy="19" r="1.8"/><circle cx="19" cy="5" r="1.8"/><circle cx="19" cy="12" r="1.8"/><circle cx="19" cy="19" r="1.8"/><path d="M5 5L19 12M5 5L19 5M5 12L19 5M5 12L19 19M5 19L19 12M5 19L19 19"/></svg>'
+  };
+
+  var state = {
+    type: 'complete',
+    n: 6,          // complete / cycle / wheel outer count
+    m: 3,          // bipartite left set
+    p: 4,          // bipartite right set
+    showDegrees: false,
+    explore: false,
+    bipartiteEdges: null,  // Set of "i-j" keys (i in left, j in right)
+    selectedVertex: null
+  };
+
+  try{
+    var saved = JSON.parse(localStorage.getItem('graphGalleryState_v1') || 'null');
+    if(saved && COLORS[saved.type]){
+      state.type = saved.type;
+      if(saved.n) state.n = saved.n;
+      if(saved.m) state.m = saved.m;
+      if(saved.p) state.p = saved.p;
+    }
+  }catch(e){ /* ignore */ }
+
+  function persist(){
+    try{
+      localStorage.setItem('graphGalleryState_v1', JSON.stringify({type:state.type, n:state.n, m:state.m, p:state.p}));
+    }catch(e){ /* ignore */ }
+  }
+
+  // ---------- tabs ----------
+  var tabsEl = document.getElementById('tabs');
+  Object.keys(COLORS).forEach(function(key){
+    var b = document.createElement('button');
+    b.className = 'tab' + (key === state.type ? ' active' : '');
+    b.dataset.type = key;
+    b.innerHTML = ICONS[key] + '<span>' + COLORS[key].name + '</span>';
+    b.addEventListener('click', function(){
+      state.type = key;
+      state.selectedVertex = null;
+      document.documentElement.style.setProperty('--accent', COLORS[key].accent);
+      Array.prototype.forEach.call(tabsEl.children, function(el){ el.classList.toggle('active', el.dataset.type === key); });
+      buildFields();
+      persist();
+      render(true);
+    });
+    tabsEl.appendChild(b);
+  });
+  document.documentElement.style.setProperty('--accent', COLORS[state.type].accent);
+
+  // ---------- fields (sliders) ----------
+  var fieldsEl = document.getElementById('fields');
+  function buildFields(){
+    fieldsEl.innerHTML = '';
+    if(state.type === 'bipartite'){
+      fieldsEl.appendChild(makeSlider('Left set size (m)', 1, 6, state.m, function(v){ state.m = v; ensureBipartiteEdges(); persist(); render(); }));
+      fieldsEl.appendChild(makeSlider('Right set size (n)', 1, 6, state.p, function(v){ state.p = v; ensureBipartiteEdges(); persist(); render(); }));
+    } else {
+      var label = state.type === 'wheel' ? 'Outer cycle size (n)' : 'Vertices (n)';
+      var min = state.type === 'cycle' || state.type === 'wheel' ? 3 : 2;
+      fieldsEl.appendChild(makeSlider(label, min, 12, state.n, function(v){ state.n = v; persist(); render(); }));
+    }
+  }
+  function makeSlider(labelText, min, max, val, onInput){
+    var wrap = document.createElement('div'); wrap.className = 'field';
+    var label = document.createElement('label');
+    var span = document.createElement('span'); span.textContent = labelText;
+    var b = document.createElement('b'); b.textContent = val;
+    label.appendChild(span); label.appendChild(b);
+    var input = document.createElement('input');
+    input.type = 'range'; input.min = min; input.max = max; input.value = val;
+    input.addEventListener('input', function(){
+      b.textContent = input.value;
+      onInput(parseInt(input.value, 10));
+    });
+    wrap.appendChild(label); wrap.appendChild(input);
+    return wrap;
+  }
+
+  // ---------- toggles ----------
+  function wireToggle(id, initial, onChange){
+    var el = document.getElementById(id);
+    if(initial) el.classList.add('on');
+    el.addEventListener('click', function(){
+      el.classList.toggle('on');
+      onChange(el.classList.contains('on'));
+    });
+  }
+  wireToggle('toggleDegrees', state.showDegrees, function(v){ state.showDegrees = v; render(); });
+  wireToggle('toggleExplore', state.explore, function(v){
+    state.explore = v;
+    document.getElementById('hint').textContent = v
+      ? (state.type === 'bipartite' ? 'click two dots on opposite sides to toggle an edge' : 'explore mode: click a vertex to pin its neighborhood')
+      : 'hover a vertex to see its degree';
+    render();
+  });
+
+  document.getElementById('animateBtn').addEventListener('click', function(){ render(true); });
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    if(state.type === 'bipartite'){ state.bipartiteEdges = null; ensureBipartiteEdges(); }
+    state.selectedVertex = null;
+    render(true);
+  });
+
+  // ---------- bipartite edge state ----------
+  function ensureBipartiteEdges(){
+    var s = new Set();
+    for(var i=0;i<state.m;i++){
+      for(var j=0;j<state.p;j++){ s.add(i+'-'+j); }
+    }
+    state.bipartiteEdges = s;
+  }
+  ensureBipartiteEdges();
+
+  // ---------- geometry helpers ----------
+  function circlePositions(count, cx, cy, r, startAngle){
+    var pts = [];
+    startAngle = startAngle === undefined ? -Math.PI/2 : startAngle;
+    for(var i=0;i<count;i++){
+      var a = startAngle + (2*Math.PI*i)/count;
+      pts.push({ x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) });
+    }
+    return pts;
+  }
+
+  function computeLayout(){
+    var cx = VB_W/2, cy = VB_H/2 + 6;
+    if(state.type === 'complete' || state.type === 'cycle'){
+      var r = 160;
+      var pts = circlePositions(state.n, cx, cy, r);
+      return { vertices: pts.map(function(p,i){ return {x:p.x,y:p.y,id:i,set:0}; }) };
+    }
+    if(state.type === 'wheel'){
+      var r2 = 160;
+      var outer = circlePositions(state.n, cx, cy, r2);
+      var verts = outer.map(function(p,i){ return {x:p.x,y:p.y,id:i,set:0}; });
+      verts.push({x:cx, y:cy, id:state.n, set:1, hub:true});
+      return { vertices: verts };
+    }
+    if(state.type === 'bipartite'){
+      var leftX = 190, rightX = VB_W - 190;
+      var topPad = 60, bottomPad = 60;
+      var verts = [];
+      for(var i=0;i<state.m;i++){
+        var y = state.m === 1 ? cy : topPad + (VB_H - topPad - bottomPad) * i/(state.m-1);
+        verts.push({x:leftX, y:y, id:i, set:0});
+      }
+      for(var j=0;j<state.p;j++){
+        var y2 = state.p === 1 ? cy : topPad + (VB_H - topPad - bottomPad) * j/(state.p-1);
+        verts.push({x:rightX, y:y2, id:j, set:1});
+      }
+      return { vertices: verts };
+    }
+  }
+
+  function computeEdges(layout){
+    var edges = [];
+    if(state.type === 'complete'){
+      var vs = layout.vertices;
+      for(var i=0;i<vs.length;i++){
+        for(var j=i+1;j<vs.length;j++){ edges.push([vs[i], vs[j]]); }
+      }
+    } else if(state.type === 'cycle'){
+      var vs2 = layout.vertices;
+      for(var k=0;k<vs2.length;k++){
+        edges.push([vs2[k], vs2[(k+1)%vs2.length]]);
+      }
+    } else if(state.type === 'wheel'){
+      var outer = layout.vertices.filter(function(v){ return !v.hub; });
+      var hub = layout.vertices.filter(function(v){ return v.hub; })[0];
+      for(var k2=0;k2<outer.length;k2++){
+        edges.push([outer[k2], outer[(k2+1)%outer.length]]);
+      }
+      outer.forEach(function(v){ edges.push([v, hub]); });
+    } else if(state.type === 'bipartite'){
+      var left = layout.vertices.filter(function(v){ return v.set === 0; });
+      var right = layout.vertices.filter(function(v){ return v.set === 1; });
+      left.forEach(function(a){
+        right.forEach(function(b){
+          if(state.bipartiteEdges.has(a.id + '-' + b.id)){ edges.push([a,b]); }
+        });
+      });
+    }
+    return edges;
+  }
+
+  function degreeOf(layout, edges, vId, vSet){
+    var d = 0;
+    edges.forEach(function(e){
+      var a = e[0], b = e[1];
+      var matchA = (state.type === 'bipartite') ? (a.id === vId && a.set === vSet) : (a.id === vId);
+      var matchB = (state.type === 'bipartite') ? (b.id === vId && b.set === vSet) : (b.id === vId);
+      if(matchA || matchB) d++;
+    });
+    return d;
+  }
+
+  // ---------- render ----------
+  function el(tag, attrs){
+    var e = document.createElementNS(NS, tag);
+    for(var k in attrs){ e.setAttribute(k, attrs[k]); }
+    return e;
+  }
+
+  function keyOf(v){ return state.type === 'bipartite' ? (v.set + ':' + v.id) : String(v.id); }
+
+  function render(animate){
+    var layout = computeLayout();
+    var edges = computeEdges(layout);
+    svg.innerHTML = '';
+    svg.setAttribute('viewBox', '0 0 ' + VB_W + ' ' + VB_H);
+
+    // faint orbit guide for circular layouts
+    if(state.type === 'complete' || state.type === 'cycle' || state.type === 'wheel'){
+      svg.appendChild(el('circle', {
+        cx: VB_W/2, cy: VB_H/2+6, r: 160, fill:'none',
+        stroke:'rgba(242,239,230,0.08)', 'stroke-width':1, 'stroke-dasharray':'3 6'
+      }));
+    }
+
+    var accent = COLORS[state.type].accent;
+    var edgeGroup = el('g', {});
+    var vertGroup = el('g', {});
+
+    var highlightSet = null;
+    if(state.selectedVertex){
+      highlightSet = state.selectedVertex;
+    }
+
+    edges.forEach(function(pair, idx){
+      var a = pair[0], b = pair[1];
+      var isHighlighted = highlightSet && (
+        (keyOf(a) === highlightSet) || (keyOf(b) === highlightSet)
+      );
+      var line = el('line', {
+        x1:a.x, y1:a.y, x2:b.x, y2:b.y,
+        class:'edge',
+        stroke: isHighlighted ? accent : 'var(--line-idle)',
+        'stroke-width': isHighlighted ? 2.6 : 1.4,
+        'stroke-linecap':'round',
+        opacity: (highlightSet && !isHighlighted) ? 0.25 : 1
+      });
+      if(animate){
+        line.style.animation = 'drawEdge .35s ease both';
+        line.style.animationDelay = (idx * 12) + 'ms';
+      }
+      edgeGroup.appendChild(line);
+    });
+
+    layout.vertices.forEach(function(v, idx){
+      var vKey = keyOf(v);
+      var isSel = highlightSet === vKey;
+      var isHub = !!v.hub;
+      var deg = degreeOf(layout, edges, v.id, v.set);
+      var g = el('g', {});
+      var radius = isHub ? 12 : 10;
+      var fillColor = state.type === 'bipartite'
+        ? (v.set === 0 ? '#7fc7dc' : '#c99be0')
+        : (isHub ? '#f2c14e' : accent);
+
+      var circle = el('circle', {
+        cx:v.x, cy:v.y, r: radius,
+        class:'vtx',
+        fill: isSel ? '#f2efe6' : fillColor,
+        stroke: 'var(--board-2)',
+        'stroke-width': 2.5,
+        filter: isSel ? 'drop-shadow(0 0 6px rgba(242,239,230,0.6))' : 'none'
+      });
+      if(animate){
+        circle.style.transformOrigin = v.x + 'px ' + v.y + 'px';
+        circle.style.animation = 'popIn .3s ease both';
+        circle.style.animationDelay = (idx * 35) + 'ms';
+      }
+
+      circle.addEventListener('mouseenter', function(){
+        if(!state.explore){ showTooltipLabel(g, v, deg); }
+      });
+      circle.addEventListener('mouseleave', function(){
+        if(!state.explore){ hideTooltipLabel(g); }
+      });
+      circle.addEventListener('click', function(){ onVertexClick(v); });
+
+      g.appendChild(circle);
+
+      if(state.showDegrees || isSel){
+        var label = el('text', {
+          x:v.x, y:v.y - radius - 8, class:'deg-label', fill:'var(--chalk)', 'text-anchor':'middle'
+        });
+        label.textContent = deg;
+        g.appendChild(label);
+      }
+
+      vertGroup.appendChild(g);
+    });
+
+    svg.appendChild(edgeGroup);
+    svg.appendChild(vertGroup);
+
+    updateStats(layout, edges);
+  }
+
+  var tooltipTimer = null;
+  function showTooltipLabel(g, v, deg){
+    if(g.querySelector('.hover-label')) return;
+    var label = el('text', {
+      x:v.x, y:v.y - 20, class:'deg-label hover-label', fill:'var(--chalk)', 'text-anchor':'middle'
+    });
+    label.textContent = 'deg = ' + deg;
+    g.appendChild(label);
+  }
+  function hideTooltipLabel(g){
+    var l = g.querySelector('.hover-label');
+    if(l) l.remove();
+  }
+
+  function flashMsg(msg){
+    var f = document.getElementById('flash');
+    f.textContent = msg;
+    f.classList.add('show');
+    clearTimeout(flashMsg._t);
+    flashMsg._t = setTimeout(function(){ f.classList.remove('show'); }, 1600);
+  }
+
+  function onVertexClick(v){
+    var vKey = keyOf(v);
+    if(!state.explore){
+      // simple pin/unpin of ego view
+      state.selectedVertex = (state.selectedVertex === vKey) ? null : vKey;
+      render();
+      return;
+    }
+    if(state.type === 'bipartite'){
+      if(state.selectedVertex === null){
+        state.selectedVertex = vKey;
+        render();
+        return;
+      }
+      var prev = state.selectedVertex.split(':');
+      var prevSet = parseInt(prev[0],10), prevId = parseInt(prev[1],10);
+      if(prevSet === v.set && prevId === v.id){
+        state.selectedVertex = null; render(); return;
+      }
+      if(prevSet === v.set){
+        flashMsg('Bipartite graphs never connect two vertices from the same set!');
+        state.selectedVertex = vKey;
+        render();
+        return;
+      }
+      var leftId = prevSet === 0 ? prevId : v.id;
+      var rightId = prevSet === 0 ? v.id : prevId;
+      var k = leftId + '-' + rightId;
+      if(state.bipartiteEdges.has(k)) state.bipartiteEdges.delete(k);
+      else state.bipartiteEdges.add(k);
+      state.selectedVertex = null;
+      render();
+    } else {
+      state.selectedVertex = (state.selectedVertex === vKey) ? null : vKey;
+      render();
+    }
+  }
+
+  // ---------- stats + formulas ----------
+  var DESCRIPTIONS = {
+    complete: 'Every single pair of distinct vertices is directly joined by an edge — nobody is left unconnected.',
+    cycle: 'The vertices form one closed loop. Each vertex touches only its two neighbours around the ring.',
+    wheel: 'A cycle graph plus one hub in the centre, wired to every vertex on the rim.',
+    bipartite: 'The vertices split into two independent sets. Every edge must cross between the sets — never within one.'
+  };
+
+  function frac(numHtml, denHtml){
+    return '<span class="frac"><span class="num">'+numHtml+'</span><span class="den">'+denHtml+'</span></span>';
+  }
+
+  function updateStats(layout, edges){
+    document.getElementById('statsTitle').textContent = COLORS[state.type].name + ' Graph';
+    document.getElementById('statsDesc').innerHTML = '<b>' + describeSymbol() + '</b> — ' + DESCRIPTIONS[state.type];
+
+    var mVertices = document.getElementById('mVertices');
+    var mEdges = document.getElementById('mEdges');
+    var mExtraLabel = document.getElementById('mExtraLabel');
+    var mExtra = document.getElementById('mExtra');
+    var formulaBox = document.getElementById('formulaBox');
+    var legend = document.getElementById('legend');
+    legend.innerHTML = '';
+
+    if(state.type === 'complete'){
+      var n = state.n;
+      mVertices.textContent = n;
+      mEdges.textContent = edges.length;
+      mExtraLabel.textContent = "Every vertex's degree";
+      mExtra.textContent = n - 1;
+      formulaBox.innerHTML = 'Edges of <i>K<sub>n</sub></i> &nbsp;=&nbsp; ' + frac('n(n&minus;1)', '2') +
+        ' &nbsp;=&nbsp; ' + frac(n+'('+(n-1)+')', '2') + ' &nbsp;=&nbsp; <b>' + edges.length + '</b>';
+    } else if(state.type === 'cycle'){
+      var n2 = state.n;
+      mVertices.textContent = n2;
+      mEdges.textContent = edges.length;
+      mExtraLabel.textContent = "Every vertex's degree";
+      mExtra.textContent = 2;
+      formulaBox.innerHTML = 'Edges of <i>C<sub>n</sub></i> &nbsp;=&nbsp; <i>n</i> &nbsp;=&nbsp; <b>' + n2 + '</b> &nbsp;·&nbsp; degree = 2 for every vertex';
+    } else if(state.type === 'wheel'){
+      var n3 = state.n;
+      mVertices.textContent = n3 + 1 + ' (' + n3 + ' rim + 1 hub)';
+      mEdges.textContent = edges.length;
+      mExtraLabel.textContent = 'Hub degree · rim degree';
+      mExtra.textContent = n3 + ' · 3';
+      formulaBox.innerHTML = 'Edges of <i>W<sub>n</sub></i> &nbsp;=&nbsp; 2<i>n</i> &nbsp;=&nbsp; <b>' + edges.length + '</b>';
+    } else if(state.type === 'bipartite'){
+      mVertices.textContent = state.m + ' + ' + state.p;
+      mEdges.textContent = edges.length + ' / ' + (state.m*state.p) + ' possible';
+      mExtraLabel.textContent = 'Max edges (complete bipartite)';
+      mExtra.textContent = state.m + '×' + state.p;
+      formulaBox.innerHTML = 'Any edge must join set <i>A</i> to set <i>B</i> — never <i>A</i>&ndash;<i>A</i> or <i>B</i>&ndash;<i>B</i>. Max possible edges = <i>m</i>·<i>n</i> = <b>' + (state.m*state.p) + '</b>';
+      legend.innerHTML =
+        '<span><i style="background:#7fc7dc"></i>set A (' + state.m + ')</span>' +
+        '<span><i style="background:#c99be0"></i>set B (' + state.p + ')</span>';
+    }
+  }
+
+  function describeSymbol(){
+    if(state.type === 'complete') return 'K' + sub(state.n);
+    if(state.type === 'cycle') return 'C' + sub(state.n);
+    if(state.type === 'wheel') return 'W' + sub(state.n);
+    if(state.type === 'bipartite') return 'K' + sub(state.m + ',' + state.p) + '-style';
+    return '';
+  }
+  function sub(x){ return '<sub>' + x + '</sub>'; }
+
+  buildFields();
+  render(true);
+})();
+</script>
+</body>
+</html>

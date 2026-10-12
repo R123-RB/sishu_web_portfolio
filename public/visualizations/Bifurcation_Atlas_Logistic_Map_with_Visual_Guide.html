@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bifurcation Atlas — Logistic Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=Spectral:ital@1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #08070a;
+    --panel: #121016;
+    --panel-2: #16131a;
+    --line: #2a2630;
+    --ink: #ece7de;
+    --muted: #948c7c;
+    --muted-2: #5c5648;
+    --brass: #cda256;
+    --brass-dim: #6b5530;
+    --indigo: #8b93ff;
+    --indigo-dim: #3d4080;
+    --warn: #e2584f;
+    --radius: 3px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection{ background: var(--brass-dim); color:#fff; }
+
+  .app{ display:flex; flex-direction:column; min-height:100vh; }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:20px; padding: 18px 22px 14px; border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .title{
+    font-family:'Spectral', serif; font-weight:600; font-size:24px; color:#fff;
+    letter-spacing:0.005em;
+  }
+  .title em{ font-style:italic; color: var(--brass); font-weight:500; }
+  .subtitle{
+    font-size:12.5px; color:var(--muted); max-width:52ch; margin-top:5px; font-style:italic;
+    font-family:'Spectral', serif;
+  }
+  .head-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn{
+    appearance:none; cursor:pointer; border-radius:var(--radius);
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.03em;
+    padding:9px 13px; text-transform:uppercase;
+    background:var(--panel-2); color:var(--ink); border:1px solid var(--line);
+    transition:border-color .15s, color .15s;
+  }
+  .btn:hover{ border-color:var(--brass); color:var(--brass); }
+  .btn:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn.ghost{ background:transparent; }
+  .seg{ display:flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .seg button{
+    appearance:none; border:none; cursor:pointer; background:var(--panel-2); color:var(--muted);
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; padding:9px 11px;
+    border-right:1px solid var(--line); text-transform:uppercase;
+  }
+  .seg button:last-child{ border-right:none; }
+  .seg button.active{ background:rgba(205,162,86,0.14); color:var(--brass); }
+
+  /* ---------- bookmarks strip ---------- */
+  .atlas{
+    display:flex; gap:8px; padding:10px 22px; border-bottom:1px solid var(--line);
+    overflow-x:auto; background:var(--panel);
+  }
+  .atlas-item{
+    appearance:none; cursor:pointer; background:var(--panel-2); color:var(--ink);
+    border:1px solid var(--line); border-radius:var(--radius);
+    font-family:'IBM Plex Sans', sans-serif; font-size:11.5px; padding:9px 12px;
+    white-space:nowrap; text-align:left; display:flex; flex-direction:column; gap:2px;
+    min-width: 150px;
+  }
+  .atlas-item b{ font-size:12px; }
+  .atlas-item span{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--muted); }
+  .atlas-item:hover{ border-color:var(--brass); }
+  .atlas-item.active{ border-color:var(--brass); background:rgba(205,162,86,0.10); }
+
+  /* ---------- main stage ---------- */
+  .stage{
+    position:relative; flex:1; display:flex;
+  }
+  .plot-wrap{
+    position:relative; flex:1; min-height: 420px;
+    background: #000;
+  }
+  canvas{ position:absolute; top:0; left:0; width:100%; height:100%; }
+  #plotCanvas{ z-index:1; }
+  #overlayCanvas{ z-index:2; cursor:crosshair; }
+
+  .readout-bar{
+    position:absolute; left:0; right:0; bottom:0; z-index:3;
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 8px 16px; font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color: var(--muted); background: linear-gradient(0deg, rgba(0,0,0,0.75), transparent);
+    pointer-events:none;
+  }
+  .readout-bar .cursor-pos{ color:var(--brass); }
+  .readout-bar .zoom-tag{ color:var(--indigo); }
+
+  .view-hud{
+    position:absolute; top:12px; right:14px; z-index:3;
+    max-width: min(230px, calc(100% - 28px));
+    background: rgba(10,8,12,0.72); border:1px solid var(--line); border-radius:var(--radius);
+    padding: 9px 12px; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--muted);
+    text-align:right; pointer-events:none; backdrop-filter: blur(2px);
+    line-height:1.65; white-space:normal; overflow-wrap:break-word; box-sizing:border-box;
+  }
+  .view-hud b{ color:var(--ink); font-weight:500; }
+
+  .hint{
+    position:absolute; top:12px; left:14px; z-index:3;
+    background: rgba(10,8,12,0.72); border:1px solid var(--line); border-radius:var(--radius);
+    padding: 9px 12px; font-size:11px; color:var(--muted);
+    max-width: min(240px, calc(100% - 28px)); box-sizing:border-box;
+    pointer-events:none;
+  }
+  .hint b{ color: var(--brass); }
+
+  .rendering-flag{
+    position:absolute; bottom:12px; right:14px; z-index:3;
+    font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--indigo);
+    opacity:0; transition:opacity .2s;
+    pointer-events:none;
+  }
+  .rendering-flag.show{ opacity:1; }
+
+  /* ---------- footer info ---------- */
+  footer{
+    border-top:1px solid var(--line); padding:12px 22px; background:var(--panel);
+    display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    font-size:11.5px; color:var(--muted);
+  }
+  footer .const{
+    font-family:'IBM Plex Mono', monospace; color:var(--indigo);
+    background:none; border:none; padding:0; font-size:inherit; cursor:pointer;
+    text-decoration:underline dotted; text-underline-offset:3px;
+  }
+  footer .const:hover{ color:var(--brass); }
+  footer .credit{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--muted-2); }
+
+  /* ---------- Feigenbaum modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(4,3,5,0.72); z-index:60;
+    display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-backdrop.show{ display:flex; }
+  .modal{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    width:min(700px, 100%); max-height:86vh; overflow:auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+  }
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:var(--panel); z-index:1;
+  }
+  .modal-title{ font-family:'Spectral', serif; font-weight:600; font-size:17px; color:#fff; }
+  .modal-close{
+    appearance:none; background:none; border:none; color:var(--muted);
+    font-size:22px; cursor:pointer; line-height:1; padding:2px 6px;
+  }
+  .modal-close:hover{ color:var(--brass); }
+  .modal-body{ padding:18px 20px 24px; }
+  .modal-lede{ font-size:12.5px; color:var(--muted); line-height:1.65; margin:0 0 14px; }
+  .def-block{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink);
+    background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 14px; margin-bottom:16px; line-height:1.7;
+  }
+  .def-label{ color:var(--brass); font-weight:600; }
+  .marker-toggle{
+    display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted);
+    margin-top:10px; cursor:pointer;
+  }
+  .fb-table{ width:100%; border-collapse:collapse; margin-top:18px; font-family:'IBM Plex Mono', monospace; font-size:10.5px; }
+  .fb-table th, .fb-table td{ padding:6px 8px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .fb-table th{ color:var(--muted); font-weight:500; text-transform:uppercase; font-size:9px; letter-spacing:0.04em; }
+  .fb-table td:first-child, .fb-table th:first-child{ text-align:left; }
+  .fb-table-wrap{ overflow-x:auto; }
+  .fb-summary{ display:flex; gap:14px; margin-top:16px; flex-wrap:wrap; }
+  .fb-card{ flex:1; min-width:170px; background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; }
+  .fb-card .l{ font-size:10px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em; }
+  .fb-card .k{ font-family:'IBM Plex Mono', monospace; font-size:19px; color:var(--brass); }
+  .fb-card .err{ font-size:10px; color:var(--muted-2); margin-top:5px; }
+
+  /* ---------- side panel: visual guide ---------- */
+  .side-panel{
+    display:none; flex-direction:column; width:328px; flex-shrink:0;
+    border-left:1px solid var(--line); background:var(--panel);
+    overflow-y:auto;
+  }
+  .side-panel.open{ display:flex; }
+  .sp-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px; border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:var(--panel); z-index:1;
+  }
+  .sp-title{ font-family:'Spectral', serif; font-weight:600; font-size:14.5px; color:#fff; }
+  .sp-close{
+    appearance:none; background:none; border:none; color:var(--muted);
+    font-size:19px; cursor:pointer; line-height:1; padding:2px 6px;
+  }
+  .sp-close:hover{ color:var(--brass); }
+  .sp-body{ padding:14px 16px 22px; display:flex; flex-direction:column; gap:20px; }
+  .sp-intro{ font-size:11.5px; color:var(--muted); line-height:1.6; margin:0; }
+  .sp-section{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 13px 14px;
+  }
+  .sp-h{ font-family:'Spectral', serif; font-size:13px; font-weight:600; color:var(--brass); margin-bottom:4px; }
+  .sp-sub{ font-size:10.8px; color:var(--muted); line-height:1.55; margin-bottom:10px; }
+  .sp-section svg{ width:100%; height:auto; display:block; }
+  .sp-stepper{
+    display:flex; align-items:center; justify-content:center; gap:12px; margin-top:8px;
+  }
+  .sp-stepper button{
+    appearance:none; cursor:pointer; width:26px; height:26px; border-radius:var(--radius);
+    background:var(--panel); border:1px solid var(--line); color:var(--ink); font-size:12px;
+  }
+  .sp-stepper button:hover:not(:disabled){ border-color:var(--brass); color:var(--brass); }
+  .sp-stepper button:disabled{ opacity:0.3; cursor:not-allowed; }
+  .sp-stepper span{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink); min-width:52px; text-align:center;
+  }
+  .sp-readout{
+    font-family:'IBM Plex Mono', monospace; font-size:10.8px; color:var(--ink);
+    line-height:1.85; margin-top:10px; text-align:center;
+  }
+  .sp-readout b{ color:var(--brass); }
+  .sp-jump{
+    appearance:none; cursor:pointer; width:100%; margin-top:10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    color:var(--indigo); font-family:'IBM Plex Mono', monospace; font-size:10px;
+    padding:8px 10px; text-transform:uppercase; letter-spacing:0.03em;
+  }
+  .sp-jump:hover{ border-color:var(--indigo); }
+  .sp-note{ font-size:10.8px; color:var(--muted); line-height:1.6; }
+  .sp-loading{ font-size:11px; color:var(--muted); text-align:center; padding:20px 0; font-style:italic; }
+  #explainBtn.active{ border-color:var(--brass); color:var(--brass); background:rgba(205,162,86,0.10); }
+
+  @media (max-width: 900px){
+    .stage{ flex-wrap:wrap; }
+    .plot-wrap{ min-width:100%; }
+    .side-panel{ width:100%; max-height:56vh; border-left:none; border-top:1px solid var(--line); }
+  }
+  @media (max-width: 720px){
+    .title{ font-size:20px; }
+    .atlas-item{ min-width:130px; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div>
+      <div class="title">Bifurcation <em>Atlas</em></div>
+      <div class="subtitle">x<sub>n+1</sub> = r·x<sub>n</sub>(1&minus;x<sub>n</sub>) — drag to zoom into any region and watch the same branching pattern reappear at every scale.</div>
+    </div>
+    <div class="head-actions">
+      <div class="seg" id="markerSeg">
+        <button data-m="0">Thin</button>
+        <button data-m="1" class="active">Bold</button>
+        <button data-m="2">Bolder</button>
+      </div>
+      <div class="seg" id="qualitySeg">
+        <button data-q="draft">Draft</button>
+        <button data-q="fine" class="active">Fine</button>
+      </div>
+      <button class="btn ghost" id="backBtn" disabled>← Back</button>
+      <button class="btn" id="resetBtn">⤢ Reset view</button>
+      <button class="btn ghost" id="feigenbaumBtn">Ω Constants</button>
+      <button class="btn ghost" id="explainBtn">◧ Visual guide</button>
+    </div>
+  </header>
+
+  <div class="atlas" id="atlas"></div>
+
+  <div class="stage">
+    <div class="plot-wrap">
+      <canvas id="plotCanvas"></canvas>
+      <canvas id="overlayCanvas"></canvas>
+      <div class="hint">Drag a box to <b>zoom in</b>. Scroll to zoom at cursor. Double-click to zoom in ×3.</div>
+      <div class="view-hud" id="viewHud"></div>
+      <div class="rendering-flag" id="renderingFlag">refining…</div>
+      <div class="readout-bar">
+        <span class="cursor-pos" id="cursorPos">r = –, x = –</span>
+        <span class="zoom-tag" id="zoomTag">magnification ×1</span>
+      </div>
+    </div>
+
+    <aside class="side-panel" id="sidePanel">
+      <div class="sp-head">
+        <div class="sp-title">Visual guide — δ &amp; α</div>
+        <button class="sp-close" id="sidePanelClose" aria-label="Close">×</button>
+      </div>
+      <div class="sp-body">
+        <p class="sp-intro">
+          Zoom into the cascade (r ≈ 2.9–3.6) and every period-doubling looks like a smaller
+          copy of the last one. These two charts show <em>why</em> — the spacing between
+          bifurcations and the width of each branch both shrink by a fixed factor, step after step.
+        </p>
+
+        <div class="sp-section">
+          <div class="sp-h">1 · Spacing shrinks by δ</div>
+          <div class="sp-sub">Each gap Δr<sub>n</sub> between one period-doubling and the next is about <b style="color:var(--ink)">1/4.669</b> the size of the gap before it.</div>
+          <svg id="deltaChart" viewBox="0 0 300 150"></svg>
+          <div class="sp-stepper">
+            <button id="deltaPrev">◀</button>
+            <span id="deltaLabel">—</span>
+            <button id="deltaNext">▶</button>
+          </div>
+          <div class="sp-readout" id="deltaReadout"></div>
+          <button class="sp-jump" id="deltaJump">↳ show this pair on the map</button>
+        </div>
+
+        <div class="sp-section">
+          <div class="sp-h">2 · Branch width shrinks by α</div>
+          <div class="sp-sub">At each superstable r<sub>n</sub>, the branch width d<sub>n</sub> = f<sup>2ⁿ⁻¹</sup>(½)−½ shrinks by about <b style="color:var(--ink)">1/2.503</b> from one level to the next.</div>
+          <svg id="alphaChart" viewBox="0 0 300 150"></svg>
+          <div class="sp-stepper">
+            <button id="alphaPrev">◀</button>
+            <span id="alphaLabel">—</span>
+            <button id="alphaNext">▶</button>
+          </div>
+          <div class="sp-readout" id="alphaReadout"></div>
+        </div>
+
+        <p class="sp-note">
+          Neither ratio is put in by hand — both come out of iterating x<sub>n+1</sub> = r·x<sub>n</sub>(1−x<sub>n</sub>)
+          and locating where the critical point x = 0.5 lands exactly back on the cycle. Because the ratios
+          settle to fixed numbers (δ ≈ 4.6692, α ≈ 2.5029), the picture keeps repeating itself at every scale —
+          that's the self-similarity you see when you drag-zoom anywhere in the cascade.
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    <div>Brightness encodes visit density: brighter pixels are where the orbit spends more time. <button class="const" id="deltaConstBtn">δ ≈ 4.6692016</button> and <button class="const" id="alphaConstBtn">α ≈ 2.5029079</button> are Feigenbaum's universal constants — the reason every zoomed copy has the same shape. Click either to derive them from the definition.</div>
+    <div class="credit">LOGISTIC MAP · CHAOS &amp; SELF-SIMILARITY</div>
+  </footer>
+
+</div>
+
+<div class="modal-backdrop" id="feigenbaumBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="feigenbaumTitle">
+    <div class="modal-head">
+      <div id="feigenbaumTitle" class="modal-title">Feigenbaum constants — derived, not quoted</div>
+      <button class="modal-close" id="feigenbaumClose" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-lede">
+        δ and α are not fitted to this picture — they fall out of the period-doubling cascade
+        itself. Every 2<sup>n</sup>-cycle has a <b>superstable</b> parameter r<sub>n</sub>, the
+        value of r at which the critical point x = 0.5 lands exactly on the cycle (where the
+        cycle's multiplier is zero). Locating each r<sub>n</sub> numerically and taking limiting
+        ratios recovers both constants directly from their definitions.
+      </p>
+      <div class="def-block">
+        <div><span class="def-label">δ</span> = lim<sub>n→∞</sub>&nbsp; (r<sub>n−1</sub> − r<sub>n−2</sub>) / (r<sub>n</sub> − r<sub>n−1</sub>) — ratio of successive spacings between bifurcations</div>
+        <div style="margin-top:6px;"><span class="def-label">α</span> = lim<sub>n→∞</sub>&nbsp; d<sub>n</sub> / d<sub>n+1</sub> — ratio of branch width to sub-branch width, where d<sub>n</sub> = f<sup>2ⁿ⁻¹</sup>(½; r<sub>n</sub>) − ½</div>
+      </div>
+      <button class="btn" id="feigenbaumRun">▸ Run the computation</button>
+      <label class="marker-toggle" id="markerToggleWrap" style="display:none;">
+        <input type="checkbox" id="feigenbaumMarkers"> mark r<sub>n</sub> on the diagram
+      </label>
+      <div id="feigenbaumResults"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ================= Bookmarks (numerically located) =================
+  const BOOKMARKS = [
+    { name:'Full diagram', tag:'r 2.4–4.0', view:{ rMin:2.4, rMax:4.0, xMin:0, xMax:1 } },
+    { name:'Period-doubling cascade', tag:'r 2.9–3.6', view:{ rMin:2.9, rMax:3.6, xMin:0, xMax:1 } },
+    { name:'Onset of chaos', tag:'r 3.5–3.57', view:{ rMin:3.50, rMax:3.57, xMin:0.28, xMax:0.82 } },
+    { name:'Period-3 window', tag:'r 3.828–3.86', view:{ rMin:3.8284, rMax:3.86, xMin:0, xMax:1 } },
+    { name:'Self-similar copy', tag:'r 3.848–3.857', view:{ rMin:3.848, rMax:3.857, xMin:0.13, xMax:0.175 } },
+  ];
+  const FULL_VIEW = BOOKMARKS[0].view;
+
+  // ================= State =================
+  const state = {
+    view: Object.assign({}, FULL_VIEW),
+    history: [],
+    quality: 'fine',
+    markerRadius: 1,
+    activeBookmark: 0,
+    renderToken: 0,
+    feigenbaum: { computed:false, running:false, results:null, delta:null, alpha:null, showMarkers:false }
+  };
+
+  // ================= DOM =================
+  const $ = id => document.getElementById(id);
+  const plotCanvas = $('plotCanvas');
+  const overlayCanvas = $('overlayCanvas');
+  const plotCtx = plotCanvas.getContext('2d');
+  const overlayCtx = overlayCanvas.getContext('2d');
+  const viewHud = $('viewHud');
+  const cursorPos = $('cursorPos');
+  const zoomTag = $('zoomTag');
+  const renderingFlag = $('renderingFlag');
+  const atlasEl = $('atlas');
+  const backBtn = $('backBtn');
+
+  function buildAtlas(){
+    atlasEl.innerHTML = '';
+    BOOKMARKS.forEach((b, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'atlas-item' + (i===state.activeBookmark ? ' active' : '');
+      btn.innerHTML = `<b>${b.name}</b><span>${b.tag}</span>`;
+      btn.addEventListener('click', () => goToBookmark(i));
+      atlasEl.appendChild(btn);
+    });
+  }
+
+  function goToBookmark(i){
+    state.activeBookmark = i;
+    pushHistory();
+    state.view = Object.assign({}, BOOKMARKS[i].view);
+    buildAtlas();
+    scheduleRender(true);
+  }
+
+  // ================= Core math =================
+  function computeDensityGrid(view, width, height, opts){
+    const { rMin, rMax, xMin, xMax } = view;
+    const S = opts.subsamples, T = opts.transient, M = opts.recorded;
+    const density = new Float64Array(width*height);
+    const rSpan = rMax-rMin, xSpan = xMax-xMin;
+    for (let px=0; px<width; px++){
+      for (let s=0; s<S; s++){
+        const r = rMin + rSpan * (px + (s+0.5)/S) / width;
+        let x = 0.5;
+        for (let i=0;i<T;i++) x = r*x*(1-x);
+        for (let i=0;i<M;i++){
+          x = r*x*(1-x);
+          if (x >= xMin && x < xMax){
+            let row = Math.floor((x-xMin)/xSpan*height);
+            if (row<0) row=0; if (row>=height) row=height-1;
+            density[row*width+px] += 1;
+          }
+        }
+      }
+    }
+    return density;
+  }
+
+  // separable max-dilation: thickens thin curves/points into visible markers
+  function dilateMax(density, width, height, radius){
+    if (radius <= 0) return density;
+    const tmp = new Float64Array(width*height);
+    for (let y=0; y<height; y++){
+      const rowOff = y*width;
+      for (let x=0; x<width; x++){
+        let m=0;
+        const x0=Math.max(0,x-radius), x1=Math.min(width-1,x+radius);
+        for (let xx=x0; xx<=x1; xx++){ const v=density[rowOff+xx]; if (v>m) m=v; }
+        tmp[rowOff+x]=m;
+      }
+    }
+    const out = new Float64Array(width*height);
+    for (let x=0; x<width; x++){
+      for (let y=0; y<height; y++){
+        let m=0;
+        const y0=Math.max(0,y-radius), y1=Math.min(height-1,y+radius);
+        for (let yy=y0; yy<=y1; yy++){ const v=tmp[yy*width+x]; if (v>m) m=v; }
+        out[y*width+x]=m;
+      }
+    }
+    return out;
+  }
+
+  function densityColor(t){
+    // 3-stop gradient: near-black -> brass -> warm white
+    t = Math.max(0, Math.min(1, t));
+    const stops = [
+      [0.00, [16,11,10]],
+      [0.20, [140,104,52]],
+      [0.45, [225,178,92]],
+      [1.00, [255,252,240]]
+    ];
+    let a = stops[0], b = stops[stops.length-1];
+    for (let i=0;i<stops.length-1;i++){
+      if (t >= stops[i][0] && t <= stops[i+1][0]){ a = stops[i]; b = stops[i+1]; break; }
+    }
+    const span = b[0]-a[0] || 1;
+    const f = (t-a[0])/span;
+    const c0 = a[1], c1 = b[1];
+    return [
+      Math.round(c0[0] + (c1[0]-c0[0])*f),
+      Math.round(c0[1] + (c1[1]-c0[1])*f),
+      Math.round(c0[2] + (c1[2]-c0[2])*f)
+    ];
+  }
+
+  function paintDensity(density, width, height){
+    const dpr = window.devicePixelRatio || 1;
+    plotCanvas.width = width; plotCanvas.height = height;
+    const dilated = dilateMax(density, width, height, state.markerRadius);
+    const img = plotCtx.createImageData(width, height);
+    let maxD = 0;
+    for (let i=0;i<dilated.length;i++) if (dilated[i] > maxD) maxD = dilated[i];
+    const gamma = 0.28, floor = 0.14;
+    for (let i=0;i<dilated.length;i++){
+      const v = dilated[i];
+      let t = 0;
+      if (v > 0){
+        t = Math.pow(v/(maxD||1), gamma);
+        if (t < floor) t = floor;
+      }
+      const [r,g,b] = v>0 ? densityColor(t) : [12,9,10];
+      const o = i*4;
+      img.data[o]=r; img.data[o+1]=g; img.data[o+2]=b; img.data[o+3]=255;
+    }
+    plotCtx.putImageData(img, 0, 0);
+  }
+
+  // ================= Render orchestration =================
+  function canvasPixelSize(canvas){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return { w: Math.max(200, Math.round(rect.width*dpr)), h: Math.max(150, Math.round(rect.height*dpr)), dpr };
+  }
+
+  function qualityParams(mode, width){
+    if (mode === 'draft') return { subsamples: 1, transient: 200, recorded: 220 };
+    return { subsamples: width > 700 ? 3 : 4, transient: 550, recorded: 650 };
+  }
+
+  let renderTimer = null;
+  function scheduleRender(immediateDraftFirst){
+    clearTimeout(renderTimer);
+    if (immediateDraftFirst){
+      doRender('draft');
+      renderTimer = setTimeout(() => doRender(state.quality), 90);
+    } else {
+      renderTimer = setTimeout(() => doRender(state.quality), 30);
+    }
+  }
+
+  function doRender(mode){
+    const token = ++state.renderToken;
+    const { w, h } = canvasPixelSize(plotCanvas);
+    resizeOverlay();
+    renderingFlag.classList.toggle('show', mode !== 'draft');
+    // yield to UI thread so the draft can paint before the heavier pass blocks
+    setTimeout(() => {
+      if (token !== state.renderToken) return;
+      const opts = qualityParams(mode, w);
+      const density = computeDensityGrid(state.view, w, h, opts);
+      if (token !== state.renderToken) return;
+      paintDensity(density, w, h);
+      if (state.feigenbaum.showMarkers && state.feigenbaum.results) drawSuperstableMarkers(w, h);
+      renderingFlag.classList.remove('show');
+      updateHud();
+    }, 0);
+  }
+
+  function resizeOverlay(){
+    const { w, h } = canvasPixelSize(overlayCanvas);
+    overlayCanvas.width = w; overlayCanvas.height = h;
+  }
+
+  // ================= HUD =================
+  function fmtNum(v, span){
+    const decimals = span < 0.0005 ? 7 : span < 0.005 ? 6 : span < 0.05 ? 5 : span < 0.5 ? 4 : 3;
+    return v.toFixed(decimals);
+  }
+
+  function updateHud(){
+    const v = state.view;
+    const rSpan = v.rMax-v.rMin, xSpan = v.xMax-v.xMin;
+    viewHud.innerHTML =
+      `r &isin; [<b>${fmtNum(v.rMin,rSpan)}</b>, <b>${fmtNum(v.rMax,rSpan)}</b>]<br>` +
+      `x &isin; [<b>${fmtNum(v.xMin,xSpan)}</b>, <b>${fmtNum(v.xMax,xSpan)}</b>]`;
+    const mag = (FULL_VIEW.rMax-FULL_VIEW.rMin)/rSpan;
+    zoomTag.textContent = `magnification ×${mag < 10 ? mag.toFixed(1) : Math.round(mag).toLocaleString()}`;
+    backBtn.disabled = state.history.length === 0;
+  }
+
+  // ================= Interaction: pan/zoom =================
+  function pushHistory(){
+    state.history.push(Object.assign({}, state.view));
+    if (state.history.length > 40) state.history.shift();
+  }
+
+  function pixelToView(px, py, canvas){
+    const rect = canvas.getBoundingClientRect();
+    const fx = px/rect.width, fy = py/rect.height;
+    const v = state.view;
+    return {
+      r: v.rMin + fx*(v.rMax-v.rMin),
+      x: v.xMax - fy*(v.xMax-v.xMin)   // y flipped: top of canvas = xMax
+    };
+  }
+
+  let dragStart = null;
+  let dragging = false;
+
+  overlayCanvas.addEventListener('mousedown', e => {
+    const rect = overlayCanvas.getBoundingClientRect();
+    dragStart = { x: e.clientX-rect.left, y: e.clientY-rect.top };
+    dragging = true;
+  });
+
+  window.addEventListener('mousemove', e => {
+    const rect = overlayCanvas.getBoundingClientRect();
+    const px = e.clientX-rect.left, py = e.clientY-rect.top;
+    const inside = px>=0 && py>=0 && px<=rect.width && py<=rect.height;
+
+    if (inside){
+      const { r, x } = pixelToView(px, py, overlayCanvas);
+      const rSpan = state.view.rMax-state.view.rMin, xSpan = state.view.xMax-state.view.xMin;
+      cursorPos.textContent = `r = ${fmtNum(r,rSpan)},  x = ${fmtNum(x,xSpan)}`;
+    }
+
+    drawOverlay(dragging && dragStart ? { x0:dragStart.x, y0:dragStart.y, x1:px, y1:py } : null, inside ? {px,py} : null);
+  });
+
+  window.addEventListener('mouseup', e => {
+    if (!dragging || !dragStart){ dragging=false; dragStart=null; return; }
+    const rect = overlayCanvas.getBoundingClientRect();
+    const px = Math.max(0, Math.min(rect.width, e.clientX-rect.left));
+    const py = Math.max(0, Math.min(rect.height, e.clientY-rect.top));
+    const dx = Math.abs(px-dragStart.x), dy = Math.abs(py-dragStart.y);
+
+    if (dx > 8 && dy > 8){
+      const a = pixelToView(Math.min(dragStart.x,px), Math.min(dragStart.y,py), overlayCanvas);
+      const b = pixelToView(Math.max(dragStart.x,px), Math.max(dragStart.y,py), overlayCanvas);
+      const newView = { rMin: a.r, rMax: b.r, xMin: b.x, xMax: a.x };
+      pushHistory();
+      state.view = clampView(newView);
+      state.activeBookmark = -1;
+      buildAtlas();
+      scheduleRender(true);
+    }
+    dragging = false; dragStart = null;
+    drawOverlay(null, null);
+  });
+
+  overlayCanvas.addEventListener('dblclick', e => {
+    const rect = overlayCanvas.getBoundingClientRect();
+    const px = e.clientX-rect.left, py = e.clientY-rect.top;
+    const { r, x } = pixelToView(px, py, overlayCanvas);
+    zoomAt(r, x, 1/3);
+  });
+
+  overlayCanvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = overlayCanvas.getBoundingClientRect();
+    const px = e.clientX-rect.left, py = e.clientY-rect.top;
+    const { r, x } = pixelToView(px, py, overlayCanvas);
+    const factor = e.deltaY < 0 ? 1/1.35 : 1.35;
+    zoomAt(r, x, factor);
+  }, { passive:false });
+
+  function zoomAt(r, x, factor){
+    const v = state.view;
+    const rSpan = (v.rMax-v.rMin)*factor;
+    const xSpan = (v.xMax-v.xMin)*factor;
+    const newView = {
+      rMin: r - (r-v.rMin)*factor,
+      rMax: r + (v.rMax-r)*factor,
+      xMin: x - (x-v.xMin)*factor,
+      xMax: x + (v.xMax-x)*factor
+    };
+    pushHistory();
+    state.view = clampView(newView);
+    state.activeBookmark = -1;
+    buildAtlas();
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(() => scheduleRender(true), 40);
+  }
+  let wheelTimer = null;
+
+  function clampView(v){
+    let { rMin,rMax,xMin,xMax } = v;
+    rMin = Math.max(0, rMin); rMax = Math.min(4, rMax);
+    xMin = Math.max(0, xMin); xMax = Math.min(1, xMax);
+    if (rMax - rMin < 1e-9) { const c=(rMax+rMin)/2; rMin=c-5e-10; rMax=c+5e-10; }
+    if (xMax - xMin < 1e-9) { const c=(xMax+xMin)/2; xMin=c-5e-10; xMax=c+5e-10; }
+    return { rMin,rMax,xMin,xMax };
+  }
+
+  function drawOverlay(dragRect, cursor){
+    const { w, h } = canvasPixelSize(overlayCanvas);
+    if (overlayCanvas.width !== w || overlayCanvas.height !== h){ overlayCanvas.width=w; overlayCanvas.height=h; }
+    overlayCtx.clearRect(0,0,w,h);
+    const dpr = w / overlayCanvas.getBoundingClientRect().width;
+
+    if (dragRect){
+      const x0 = Math.min(dragRect.x0,dragRect.x1)*dpr, x1 = Math.max(dragRect.x0,dragRect.x1)*dpr;
+      const y0 = Math.min(dragRect.y0,dragRect.y1)*dpr, y1 = Math.max(dragRect.y0,dragRect.y1)*dpr;
+      overlayCtx.fillStyle = 'rgba(205,162,86,0.12)';
+      overlayCtx.fillRect(x0,y0,x1-x0,y1-y0);
+      overlayCtx.strokeStyle = '#cda256';
+      overlayCtx.lineWidth = 1.5;
+      overlayCtx.strokeRect(x0,y0,x1-x0,y1-y0);
+    }
+    if (cursor && !dragRect){
+      const cx = cursor.px*dpr, cy = cursor.py*dpr;
+      overlayCtx.strokeStyle = 'rgba(139,147,255,0.55)';
+      overlayCtx.lineWidth = 1;
+      overlayCtx.beginPath();
+      overlayCtx.moveTo(cx,0); overlayCtx.lineTo(cx,h);
+      overlayCtx.moveTo(0,cy); overlayCtx.lineTo(w,cy);
+      overlayCtx.stroke();
+    }
+  }
+
+  backBtn.addEventListener('click', () => {
+    if (!state.history.length) return;
+    state.view = state.history.pop();
+    state.activeBookmark = -1;
+    buildAtlas();
+    scheduleRender(true);
+  });
+
+  $('resetBtn').addEventListener('click', () => {
+    pushHistory();
+    goToBookmark(0);
+  });
+
+  $('markerSeg').addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    document.querySelectorAll('#markerSeg button').forEach(b=>b.classList.toggle('active', b===btn));
+    state.markerRadius = parseInt(btn.dataset.m, 10);
+    scheduleRender(false);
+  });
+
+  $('qualitySeg').addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    document.querySelectorAll('#qualitySeg button').forEach(b=>b.classList.toggle('active', b===btn));
+    state.quality = btn.dataset.q;
+    scheduleRender(false);
+  });
+
+  window.addEventListener('resize', () => scheduleRender(false));
+
+  // ================= Feigenbaum constants (computed from definition) =================
+  const REF_DELTA = 4.66920160910299067185320382;
+  const REF_ALPHA = 2.50290787509589282228390287;
+
+  const feigenbaumBtn = $('feigenbaumBtn');
+  const feigenbaumBackdrop = $('feigenbaumBackdrop');
+  const feigenbaumClose = $('feigenbaumClose');
+  const feigenbaumRun = $('feigenbaumRun');
+  const feigenbaumResults = $('feigenbaumResults');
+  const markerToggleWrap = $('markerToggleWrap');
+  const feigenbaumMarkersChk = $('feigenbaumMarkers');
+  const deltaConstBtn = $('deltaConstBtn');
+  const alphaConstBtn = $('alphaConstBtn');
+
+  function fmap(x, r){ return r*x*(1-x); }
+  function iterateMap(x, r, times){
+    for (let i=0;i<times;i++) x = fmap(x, r);
+    return x;
+  }
+
+  // Find the smallest r in (rLow, rHigh) at which the critical point x=0.5 returns
+  // to itself after `period` iterations of the map — i.e. a superstable cycle of
+  // that exact period. Scans for a sign change, then bisects to machine precision.
+  function findSuperstableR(period, rLow, rHigh, steps){
+    const step = (rHigh-rLow)/steps;
+    let rA = rLow, gA = iterateMap(0.5, rA, period) - 0.5;
+    for (let i=1;i<=steps;i++){
+      const rB = rLow + i*step;
+      const gB = iterateMap(0.5, rB, period) - 0.5;
+      if (gA !== 0 && Math.sign(gB) !== Math.sign(gA)){
+        let lo = rA, hi = rB, flo = gA;
+        for (let k=0;k<80;k++){
+          const mid = (lo+hi)/2;
+          const fm = iterateMap(0.5, mid, period) - 0.5;
+          if (fm === 0){ lo = hi = mid; break; }
+          if (Math.sign(fm) === Math.sign(flo)){ lo = mid; flo = fm; } else { hi = mid; }
+          if (hi-lo < 1e-15) break;
+        }
+        return (lo+hi)/2;
+      }
+      rA = rB; gA = gB;
+    }
+    return null;
+  }
+
+  function computeFeigenbaum(maxLevels){
+    const rows = [{ n:0, period:1, r:2.0 }]; // r=2: period-1 orbit is exactly superstable
+    let rPrev = 2.0, gapPrev = null;
+    for (let n=1; n<=maxLevels; n++){
+      const period = Math.pow(2, n);
+      const windowGuess = gapPrev===null ? 1.6 : gapPrev*1.4;
+      const rHigh = Math.min(4.0, rPrev + windowGuess);
+      let r = findSuperstableR(period, rPrev + 1e-9, rHigh, 2500);
+      if (r === null) r = findSuperstableR(period, rPrev + 1e-9, 4.0, 6000);
+      if (r === null) break;
+      const gap = r - rPrev;
+      // Each successive bifurcation gap should shrink by roughly 1/delta (~0.214x).
+      // Once it stops shrinking by at least half, double-precision rounding (accumulated
+      // over thousands of map iterations) has caught up with the signal -- stop here
+      // rather than report noise as if it were more digits of precision.
+      if (gapPrev !== null && gap > gapPrev*0.6) break;
+      const row = { n, period, r, gap };
+      if (gapPrev !== null) row.delta = gapPrev/gap;
+      rows.push(row);
+      gapPrev = gap; rPrev = r;
+      if (gap < 1e-10) break;
+    }
+    // branch-width ratios: d_n = f^(period/2)(0.5; r_n) - 0.5
+    for (let i=1;i<rows.length;i++){
+      const { period, r } = rows[i];
+      rows[i].d = iterateMap(0.5, r, period/2) - 0.5;
+    }
+    for (let i=2;i<rows.length;i++){
+      if (rows[i-1].d && rows[i].d) rows[i].alpha = rows[i-1].d/rows[i].d;
+    }
+    // Pick the level where successive estimates agree best -- typically the level
+    // just before floating-point noise starts to dominate the (by-then tiny) gaps.
+    function bestEstimate(key){
+      const vals = rows.filter(row => row[key] !== undefined);
+      if (!vals.length) return null;
+      let bestIdx = vals.length-1, bestDiff = Infinity;
+      for (let i=1;i<vals.length;i++){
+        const diff = Math.abs(vals[i][key] - vals[i-1][key]);
+        if (diff < bestDiff){ bestDiff = diff; bestIdx = i; }
+      }
+      return vals[bestIdx][key];
+    }
+    const bestDelta = bestEstimate('delta');
+    const bestAlpha = bestEstimate('alpha');
+    return {
+      rows,
+      delta: bestDelta,
+      alpha: bestAlpha !== null ? Math.abs(bestAlpha) : null
+    };
+  }
+
+  function renderFeigenbaumResults(fb){
+    const rowsHtml = fb.rows.map(row => {
+      const rStr = row.r.toFixed(12);
+      const gapStr = row.gap !== undefined ? row.gap.toExponential(4) : '—';
+      const deltaStr = row.delta !== undefined ? row.delta.toFixed(8) : '—';
+      const dStr = row.d !== undefined ? row.d.toExponential(4) : '—';
+      const alphaStr = row.alpha !== undefined ? row.alpha.toFixed(8) : '—';
+      const isBest = (row.delta === fb.delta) || (row.alpha !== undefined && Math.abs(row.alpha) === fb.alpha);
+      return `<tr${isBest ? ' class="final"' : ''}><td>${row.n}</td><td>${row.period}</td><td>${rStr}</td><td>${gapStr}</td><td>${deltaStr}</td><td>${dStr}</td><td>${alphaStr}</td></tr>`;
+    }).join('');
+
+    const deltaErr = fb.delta !== null ? Math.abs(fb.delta-REF_DELTA) : null;
+    const alphaErr = fb.alpha !== null ? Math.abs(fb.alpha-REF_ALPHA) : null;
+
+    feigenbaumResults.innerHTML = `
+      <div class="fb-table-wrap">
+        <table class="fb-table">
+          <thead><tr><th>n</th><th>period</th><th>r<sub>n</sub> (superstable)</th><th>&Delta;r<sub>n</sub></th><th>&delta;<sub>n</sub></th><th>d<sub>n</sub></th><th>&alpha;<sub>n</sub></th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+      <div class="fb-summary">
+        <div class="fb-card">
+          <div class="l">&delta;, computed here</div>
+          <div class="k">${fb.delta !== null ? fb.delta.toFixed(9) : '—'}</div>
+          <div class="err">reference 4.669201609… &middot; error ${deltaErr!==null?deltaErr.toExponential(2):'—'}</div>
+        </div>
+        <div class="fb-card">
+          <div class="l">&alpha;, computed here</div>
+          <div class="k">${fb.alpha !== null ? fb.alpha.toFixed(9) : '—'}</div>
+          <div class="err">reference 2.502907875… &middot; error ${alphaErr!==null?alphaErr.toExponential(2):'—'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function runFeigenbaum(){
+    if (state.feigenbaum.running) return;
+    state.feigenbaum.running = true;
+    feigenbaumRun.disabled = true;
+    feigenbaumRun.textContent = 'computing…';
+    setTimeout(() => {
+      const fb = computeFeigenbaum(16);
+      state.feigenbaum.computed = true;
+      state.feigenbaum.results = fb;
+      state.feigenbaum.delta = fb.delta;
+      state.feigenbaum.alpha = fb.alpha;
+      renderFeigenbaumResults(fb);
+      feigenbaumRun.textContent = '↻ Recompute';
+      feigenbaumRun.disabled = false;
+      markerToggleWrap.style.display = 'flex';
+      state.feigenbaum.running = false;
+    }, 20);
+  }
+
+  function drawSuperstableMarkers(w, h){
+    const rect = plotCanvas.getBoundingClientRect();
+    const dpr = rect.width ? (w/rect.width) : 1;
+    const v = state.view;
+    const rows = state.feigenbaum.results.rows;
+    plotCtx.save();
+    plotCtx.strokeStyle = 'rgba(139,147,255,0.9)';
+    plotCtx.fillStyle = 'rgba(139,147,255,0.95)';
+    plotCtx.lineWidth = Math.max(1, dpr);
+    plotCtx.font = `${9*dpr}px 'IBM Plex Mono', monospace`;
+    const tickLen = 10*dpr;
+    let lastLabelX = -999;
+    rows.forEach(row => {
+      if (row.n === 0 || row.r < v.rMin || row.r > v.rMax) return;
+      const px = (row.r - v.rMin)/(v.rMax - v.rMin) * w;
+      plotCtx.beginPath();
+      plotCtx.moveTo(px, h);
+      plotCtx.lineTo(px, h - tickLen);
+      plotCtx.stroke();
+      if (px - lastLabelX > 26*dpr){
+        plotCtx.fillText('n'+row.n, px + 2*dpr, h - 2*dpr);
+        lastLabelX = px;
+      }
+    });
+    plotCtx.restore();
+  }
+
+  function openFeigenbaumModal(){
+    feigenbaumBackdrop.classList.add('show');
+    if (!state.feigenbaum.computed) runFeigenbaum();
+  }
+  function closeFeigenbaumModal(){ feigenbaumBackdrop.classList.remove('show'); }
+
+  feigenbaumBtn.addEventListener('click', openFeigenbaumModal);
+  deltaConstBtn.addEventListener('click', openFeigenbaumModal);
+  alphaConstBtn.addEventListener('click', openFeigenbaumModal);
+  feigenbaumClose.addEventListener('click', closeFeigenbaumModal);
+  feigenbaumBackdrop.addEventListener('click', e => { if (e.target === feigenbaumBackdrop) closeFeigenbaumModal(); });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') closeFeigenbaumModal(); });
+  feigenbaumRun.addEventListener('click', runFeigenbaum);
+  feigenbaumMarkersChk.addEventListener('change', () => {
+    state.feigenbaum.showMarkers = feigenbaumMarkersChk.checked;
+    scheduleRender(false);
+  });
+
+  // ================= Visual guide side panel =================
+  const sidePanel = $('sidePanel');
+  const explainBtn = $('explainBtn');
+  const sidePanelClose = $('sidePanelClose');
+  const deltaChartEl = $('deltaChart');
+  const alphaChartEl = $('alphaChart');
+  const deltaLabel = $('deltaLabel');
+  const alphaLabel = $('alphaLabel');
+  const deltaReadout = $('deltaReadout');
+  const alphaReadout = $('alphaReadout');
+  const deltaPrevBtn = $('deltaPrev');
+  const deltaNextBtn = $('deltaNext');
+  const alphaPrevBtn = $('alphaPrev');
+  const alphaNextBtn = $('alphaNext');
+  const deltaJumpBtn = $('deltaJump');
+
+  const panelState = { deltaStep: null, alphaStep: null };
+
+  function computeFeigenbaumIfNeeded(cb){
+    if (state.feigenbaum.computed){ cb(); return; }
+    if (state.feigenbaum.running){ setTimeout(() => computeFeigenbaumIfNeeded(cb), 40); return; }
+    state.feigenbaum.running = true;
+    setTimeout(() => {
+      const fb = computeFeigenbaum(16);
+      state.feigenbaum.computed = true;
+      state.feigenbaum.results = fb;
+      state.feigenbaum.delta = fb.delta;
+      state.feigenbaum.alpha = fb.alpha;
+      state.feigenbaum.running = false;
+      cb();
+    }, 10);
+  }
+
+  // Draws a small bar chart (linear height, min-height floor so tiny bars stay visible)
+  // with the two bars used in the current ratio picked out in brass and joined by an arrow.
+  function renderRatioChart(svgEl, entries, hiA, hiB){
+    const w = 300, h = 150, padL = 8, padR = 8, padB = 22, padT = 20, gap = 12;
+    const n = entries.length;
+    const barW = (w - padL - padR - (n - 1) * gap) / n;
+    const maxV = Math.max(...entries.map(e => e.value));
+    const scaleH = h - padT - padB;
+    let bars = '', labels = '';
+    entries.forEach((e, i) => {
+      const bh = Math.max(6, (e.value / maxV) * scaleH);
+      const x = padL + i * (barW + gap);
+      const y = h - padB - bh;
+      const hot = i === hiA || i === hiB;
+      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${hot ? '#cda256' : '#3d4080'}" opacity="${hot ? '1' : '0.55'}"/>`;
+      labels += `<text x="${(x + barW/2).toFixed(1)}" y="${h - padB + 13}" font-size="9" fill="#948c7c" text-anchor="middle" font-family="'IBM Plex Mono', monospace">n=${e.n}</text>`;
+      labels += `<text x="${(x + barW/2).toFixed(1)}" y="${(y - 4).toFixed(1)}" font-size="7.5" fill="#ece7de" text-anchor="middle" font-family="'IBM Plex Mono', monospace">${e.value.toExponential(1)}</text>`;
+    });
+    let arrow = '';
+    if (hiA != null && hiB != null){
+      const xa = padL + hiA * (barW + gap) + barW / 2;
+      const xb = padL + hiB * (barW + gap) + barW / 2;
+      const y = padT - 8;
+      arrow = `<line x1="${xa.toFixed(1)}" y1="${y}" x2="${xb.toFixed(1)}" y2="${y}" stroke="#8b93ff" stroke-width="1.3" marker-end="url(#sp-arrow)"/>`;
+    }
+    svgEl.innerHTML = `<defs><marker id="sp-arrow" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#8b93ff"/></marker></defs>${bars}${labels}${arrow}`;
+  }
+
+  function deltaGapRows(){
+    return state.feigenbaum.results.rows.filter(r => r.gap !== undefined).map(r => ({ n: r.n, value: r.gap, r: r.r }));
+  }
+  function alphaWidthRows(){
+    return state.feigenbaum.results.rows.filter(r => r.d !== undefined).map(r => ({ n: r.n, value: Math.abs(r.d), r: r.r }));
+  }
+
+  function renderDeltaPanel(){
+    const rows = deltaGapRows();
+    if (rows.length < 2){ deltaReadout.textContent = 'Not enough levels resolved.'; return; }
+    const maxStep = rows.length - 1;
+    if (panelState.deltaStep === null) panelState.deltaStep = Math.min(3, maxStep);
+    panelState.deltaStep = Math.max(1, Math.min(maxStep, panelState.deltaStep));
+    const step = panelState.deltaStep;
+    const lo = Math.max(0, step - 2), hi = Math.min(rows.length - 1, step + 1);
+    const window = rows.slice(lo, hi + 1);
+    const hiA = (step - 1) - lo, hiB = step - lo;
+    renderRatioChart(deltaChartEl, window, hiA, hiB);
+    const gapPrev = rows[step - 1].value, gapCur = rows[step].value;
+    const ratio = gapPrev / gapCur;
+    const err = Math.abs(ratio - REF_DELTA);
+    deltaLabel.textContent = `n = ${rows[step].n}`;
+    deltaReadout.innerHTML =
+      `&Delta;r<sub>${rows[step-1].n}</sub> = ${gapPrev.toExponential(3)}<br>` +
+      `&Delta;r<sub>${rows[step].n}</sub> = ${gapCur.toExponential(3)}<br>` +
+      `ratio = <b>${ratio.toFixed(6)}</b> &nbsp;(&delta; = 4.669202…, off by ${err.toExponential(2)})`;
+    deltaPrevBtn.disabled = step <= 1;
+    deltaNextBtn.disabled = step >= maxStep;
+  }
+
+  function renderAlphaPanel(){
+    const rows = alphaWidthRows();
+    if (rows.length < 2){ alphaReadout.textContent = 'Not enough levels resolved.'; return; }
+    const maxStep = rows.length - 1;
+    if (panelState.alphaStep === null) panelState.alphaStep = Math.min(3, maxStep);
+    panelState.alphaStep = Math.max(1, Math.min(maxStep, panelState.alphaStep));
+    const step = panelState.alphaStep;
+    const lo = Math.max(0, step - 2), hi = Math.min(rows.length - 1, step + 1);
+    const window = rows.slice(lo, hi + 1);
+    const hiA = (step - 1) - lo, hiB = step - lo;
+    renderRatioChart(alphaChartEl, window, hiA, hiB);
+    const dPrev = rows[step - 1].value, dCur = rows[step].value;
+    const ratio = dPrev / dCur;
+    const err = Math.abs(ratio - REF_ALPHA);
+    alphaLabel.textContent = `n = ${rows[step].n}`;
+    alphaReadout.innerHTML =
+      `d<sub>${rows[step-1].n}</sub> = ${dPrev.toExponential(3)}<br>` +
+      `d<sub>${rows[step].n}</sub> = ${dCur.toExponential(3)}<br>` +
+      `ratio = <b>${ratio.toFixed(6)}</b> &nbsp;(&alpha; = 2.502908…, off by ${err.toExponential(2)})`;
+    alphaPrevBtn.disabled = step <= 1;
+    alphaNextBtn.disabled = step >= maxStep;
+  }
+
+  function openSidePanel(){
+    sidePanel.classList.add('open');
+    explainBtn.classList.add('active');
+    deltaReadout.innerHTML = '<span class="sp-loading">deriving δ and α from the map…</span>';
+    alphaReadout.innerHTML = '';
+    computeFeigenbaumIfNeeded(() => {
+      renderDeltaPanel();
+      renderAlphaPanel();
+    });
+    requestAnimationFrame(() => scheduleRender(false));
+  }
+  function closeSidePanel(){
+    sidePanel.classList.remove('open');
+    explainBtn.classList.remove('active');
+    requestAnimationFrame(() => scheduleRender(false));
+  }
+
+  explainBtn.addEventListener('click', () => {
+    if (sidePanel.classList.contains('open')) closeSidePanel(); else openSidePanel();
+  });
+  sidePanelClose.addEventListener('click', closeSidePanel);
+
+  deltaPrevBtn.addEventListener('click', () => { panelState.deltaStep--; renderDeltaPanel(); });
+  deltaNextBtn.addEventListener('click', () => { panelState.deltaStep++; renderDeltaPanel(); });
+  alphaPrevBtn.addEventListener('click', () => { panelState.alphaStep--; renderAlphaPanel(); });
+  alphaNextBtn.addEventListener('click', () => { panelState.alphaStep++; renderAlphaPanel(); });
+
+  deltaJumpBtn.addEventListener('click', () => {
+    const rows = deltaGapRows();
+    const step = panelState.deltaStep;
+    if (step === null || !rows[step]) return;
+    const rA = rows[step - 1].r, rB = rows[step].r;
+    const gap = Math.abs(rB - rA);
+    const pad = Math.max(gap * 1.6, 1e-6);
+    const rMin = Math.max(0, Math.min(rA, rB) - pad);
+    const rMax = Math.min(4, Math.max(rA, rB) + pad * 0.4);
+    pushHistory();
+    state.view = clampView({ rMin, rMax, xMin: 0, xMax: 1 });
+    state.activeBookmark = -1;
+    buildAtlas();
+    state.feigenbaum.showMarkers = true;
+    if (feigenbaumMarkersChk) feigenbaumMarkersChk.checked = true;
+    if (markerToggleWrap) markerToggleWrap.style.display = 'flex';
+    scheduleRender(true);
+  });
+
+  // ================= Init =================
+  buildAtlas();
+  scheduleRender(true);
+})();
+</script>
+</body>
+</html>

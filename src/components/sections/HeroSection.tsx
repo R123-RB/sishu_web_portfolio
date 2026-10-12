@@ -3,10 +3,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import portfolioData from '@/data/portfolioData.json';
 import { ArrowRight, BookOpen, Users, GraduationCap } from 'lucide-react';
+
+// Inline SVG placeholder - no external file needed, works immediately
+const PROFILE_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563EB'/%3E%3Ctext x='50' y='62' font-size='40' fill='white' text-anchor='middle' font-family='system-ui, sans-serif' font-weight='bold'%3ESM%3C/text%3E%3C/svg%3E";
 
 const LinkedinIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -17,7 +21,6 @@ const LinkedinIcon = ({ className }: { className?: string }) => (
 export const HeroSection = () => {
   const { hero } = portfolioData;
   const router = useRouter();
-  const [profileImgError, setProfileImgError] = React.useState(false);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-32">
@@ -27,26 +30,27 @@ export const HeroSection = () => {
       
       <div className="max-w-7xl mx-auto px-6 md:px-12 z-10 w-full flex flex-col items-center text-center">
         
-        {/* Profile Image (Placeholder for now) */}
+        {/* Profile Image - Optimized with inline SVG placeholder */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
           className="mb-8 relative group"
         >
           <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-          {profileImgError ? (
-            <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-zinc-800 bg-zinc-900 flex items-center justify-center text-3xl font-bold text-white">
-              SM
-            </div>
-          ) : (
-            <img 
-              src="/placeholder-profile.jpg" 
-              alt="Dr. Sishu Shankar Muni" 
-              className="relative w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-2 border-zinc-800 bg-zinc-900"
-              onError={() => setProfileImgError(true)}
+          
+          <div className="relative w-32 h-32 md:w-40 md:h-40 mx-auto">
+            <Image
+              src={PROFILE_PLACEHOLDER}
+              alt="Dr. Sishu Shankar Muni"
+              fill
+              priority
+              className="rounded-full object-cover border-2 border-zinc-800 bg-zinc-900"
+              sizes="128px"
+              placeholder="blur"
+              blurDataURL={PROFILE_PLACEHOLDER}
             />
-          )}
+          </div>
         </motion.div>
 
         {/* Headline */}

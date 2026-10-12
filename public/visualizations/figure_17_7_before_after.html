@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Figure 17.7 — Before and After the Period-Doubling Bifurcation</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1c2438; --ink:#e8ecf5; --muted:#8a94ad;
+    --accent:#e0483c; --accent2:#4fb0e0; --good:#59c98a; --gold:#d8b25c; --border:#2a3350;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; padding:22px; background:var(--bg); color:var(--ink); font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;}
+  h1{font-size:1.2rem; font-weight:600; margin:0 0 4px 0;}
+  .sub{color:var(--muted); font-size:.88rem; margin-bottom:16px; max-width:880px; line-height:1.5;}
+  .layout{display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;}
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px;}
+  canvas{border-radius:6px; display:block; background:#0c111d;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center;}
+  button{background:var(--panel2); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:6px 11px; font-size:.78rem; cursor:pointer; font-family:inherit;}
+  button:hover{border-color:var(--accent2);}
+  button.special{border-color:var(--gold); color:var(--gold);}
+  input[type=range]{width:280px;}
+  .readout{font-size:.8rem; color:var(--muted); margin-top:10px; line-height:1.65; max-width:340px;}
+  .readout b{color:var(--ink);}
+  .attract{color:var(--good); font-weight:600;}
+  .repel{color:var(--accent); font-weight:600;}
+  .status{margin-top:10px; padding:10px 13px; border-radius:8px; font-size:.85rem; font-weight:600;}
+  .status.before{background:rgba(79,176,224,0.14); color:var(--accent2); border:1px solid rgba(79,176,224,0.4);}
+  .status.after{background:rgba(89,201,138,0.14); color:var(--good); border:1px solid rgba(89,201,138,0.4);}
+  .status.at{background:rgba(216,178,92,0.16); color:var(--gold); border:1px solid rgba(216,178,92,0.5);}
+</style>
+</head>
+<body>
+
+<h1>Watching ±b split apart — the continuous version of Figure 17.7</h1>
+<div class="sub">
+The two marked points are the genuine period-2 cycle, solving $z^2+z+(c+1)=0$. Drag $c$ across $-3/4$ and watch them go from a
+close complex-conjugate pair (left picture in the book) to two separated real points, one per lobe (right picture) — the exact
+instant they collide is the pinch that splits the Julia set in two.
+</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <canvas id="jCanvas" width="360" height="360"></canvas>
+    <div class="row">
+      <span style="font-size:.8rem;color:var(--muted);">c =</span>
+      <input type="range" id="cSlider" min="-1000" max="-550" value="-700">
+      <span id="cVal" style="font-size:.85rem;">−0.700</span>
+    </div>
+    <div class="row">
+      <button class="special" id="beforeBtn">"Before" — c = −0.70</button>
+      <button class="special" id="afterBtn">"After" — c = −0.80</button>
+      <button id="bifBtn">jump to c = −3/4 (the pinch)</button>
+    </div>
+  </div>
+
+  <div class="panel" style="max-width:340px;">
+    <div class="readout" id="readout"></div>
+    <div class="status before" id="status"></div>
+  </div>
+
+</div>
+
+<script>
+const jCanvas = document.getElementById('jCanvas');
+const jctx = jCanvas.getContext('2d');
+const JSZ = jCanvas.width;
+const RNG = 2; // view -2..2
+
+function toX(re){ return (re+RNG)/(2*RNG)*JSZ; }
+function toY(im){ return (im+RNG)/(2*RNG)*JSZ; }
+
+function renderJuliaBG(c){
+  const lw=150, lh=150;
+  const off=document.createElement('canvas'); off.width=lw; off.height=lh;
+  const octx=off.getContext('2d');
+  const img=octx.createImageData(lw,lh);
+  const maxIter=60;
+  for(let px=0;px<lw;px++) for(let py=0;py<lh;py++){
+    let zre=-RNG+(px/lw)*2*RNG, zim=-RNG+(py/lh)*2*RNG;
+    let iter=0;
+    while(zre*zre+zim*zim<4 && iter<maxIter){
+      const nzre=zre*zre-zim*zim+c, nzim=2*zre*zim;
+      zre=nzre; zim=nzim; iter++;
+    }
+    const idx=(py*lw+px)*4;
+    if(iter===maxIter){ img.data[idx]=232;img.data[idx+1]=234;img.data[idx+2]=240;img.data[idx+3]=255; }
+    else{
+      const t=iter/maxIter;
+      img.data[idx]=255; img.data[idx+1]=Math.floor(230-t*70); img.data[idx+2]=Math.floor(190-t*140); img.data[idx+3]=255;
+    }
+  }
+  octx.putImageData(img,0,0);
+  jctx.fillStyle='#0c111d'; jctx.fillRect(0,0,JSZ,JSZ);
+  jctx.imageSmoothingEnabled=true;
+  jctx.drawImage(off,0,0,JSZ,JSZ);
+}
+
+function csqrt(re,im){
+  const r = Math.sqrt(Math.hypot(re,im));
+  const theta = Math.atan2(im,re)/2;
+  return { re: r*Math.cos(theta), im: r*Math.sin(theta) };
+}
+
+function drawMarker(pt, color, label, labelDx, labelDy){
+  const x=toX(pt.re), y=toY(pt.im);
+  jctx.fillStyle=color;
+  jctx.beginPath(); jctx.arc(x,y,5,0,Math.PI*2); jctx.fill();
+  jctx.strokeStyle='#0c111d'; jctx.lineWidth=1; jctx.stroke();
+  jctx.font='12px Georgia'; jctx.fillStyle=color;
+  jctx.fillText(label, x+labelDx, y+labelDy);
+}
+
+function fmt(z){ return z.re.toFixed(3) + (z.im>=0?' + ':' − ') + Math.abs(z.im).toFixed(3) + 'i'; }
+
+function update(c){
+  renderJuliaBG(c);
+
+  // fixed points z = (1 ± sqrt(1-4c))/2
+  const d1 = 1-4*c;
+  const s1 = csqrt(d1,0);
+  const zA = { re:(1+s1.re)/2, im:s1.im/2 };
+  const zB = { re:(1-s1.re)/2, im:-s1.im/2 };
+  const multA = 2*Math.hypot(zA.re,zA.im);
+  const multB = 2*Math.hypot(zB.re,zB.im);
+  const zAttr = multA<1 ? zA : zB;
+  const zRep  = multA<1 ? zB : zA;
+
+  // 2-cycle: z = (-1 ± sqrt(-4c-3))/2
+  const d2 = -4*c-3;
+  const s2 = csqrt(d2,0);
+  const bPlus  = { re:(-1+s2.re)/2, im: s2.im/2 };
+  const bMinus = { re:(-1-s2.re)/2, im:-s2.im/2 };
+  const cycMult = 4*(bPlus.re*bMinus.re - bPlus.im*bMinus.im); // Re(4·b+·b-) ; magnitude computed below properly
+  // proper multiplier magnitude: |2b+||2b-| with correct phase — compute as complex product
+  const prodRe = bPlus.re*bMinus.re - bPlus.im*bMinus.im;
+  const prodIm = bPlus.re*bMinus.im + bPlus.im*bMinus.re;
+  const cycMultMag = 4*Math.hypot(prodRe,prodIm);
+
+  // draw connecting line between the two cycle points
+  jctx.strokeStyle='rgba(216,178,92,0.55)'; jctx.lineWidth=1.3;
+  jctx.beginPath(); jctx.moveTo(toX(bPlus.re),toY(bPlus.im)); jctx.lineTo(toX(bMinus.re),toY(bMinus.im)); jctx.stroke();
+
+  drawMarker(zAttr, '#59c98a', 'z (attracting)', 8, -8);
+  drawMarker(zRep, '#e0483c', 'z₋ (repelling)', 8, -8);
+  drawMarker(bPlus, '#d8b25c', '+b', 8, 4);
+  drawMarker(bMinus, '#d8b25c', '−b', 8, 4);
+
+  document.getElementById('cVal').textContent = c.toFixed(3);
+  document.getElementById('readout').innerHTML =
+    'c = <b>' + c.toFixed(3) + '</b><br>' +
+    'fixed pts: <b>' + fmt(zAttr) + '</b> (' + (multA<1?'multiplier '+multA.toFixed(3):'multiplier '+multB.toFixed(3)) + ')<br>' +
+    '±b (2-cycle): <b>' + fmt(bPlus) + '</b>, <b>' + fmt(bMinus) + '</b><br>' +
+    '2-cycle multiplier |·| = <b>' + cycMultMag.toFixed(3) + '</b>';
+
+  const statusEl = document.getElementById('status');
+  if(Math.abs(c+0.75) < 0.004){
+    statusEl.className='status at';
+    statusEl.textContent = 'c = −3/4 exactly: ±b and z₋ have collided into one point — this is the pinch itself.';
+  } else if(c > -0.75){
+    statusEl.className='status before';
+    statusEl.textContent = '"Before": ±b are a complex-conjugate pair, close to z₋. The curve has not pinched — one simple closed loop (left picture).';
+  } else {
+    statusEl.className='status after';
+    statusEl.textContent = '"After": ±b are two distinct real points, each now the attracting center of its own lobe. The curve has pinched into two pieces (right picture).';
+  }
+}
+
+const slider = document.getElementById('cSlider');
+slider.addEventListener('input', ()=> update(parseInt(slider.value)/1000));
+document.getElementById('beforeBtn').addEventListener('click', ()=>{ slider.value=-700; update(-0.700); });
+document.getElementById('afterBtn').addEventListener('click', ()=>{ slider.value=-800; update(-0.800); });
+document.getElementById('bifBtn').addEventListener('click', ()=>{ slider.value=-750; update(-0.750); });
+
+update(-0.700);
+</script>
+
+</body>
+</html>

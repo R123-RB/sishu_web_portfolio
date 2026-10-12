@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Family z³ + λ/z³ — Parameter Plane</title>
+<style>
+  :root{
+    --bg:#030705; --panel:#081008; --panel2:#0c1810; --ink:#d8ffe0; --muted:#5f9c5a;
+    --neon:#39ff14; --neon-dim:#0f5c0a; --magenta:#ff2ec4; --border:#163a12;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; padding:22px; background:var(--bg); color:var(--ink); font-family:"Courier New",monospace;}
+  h1{font-size:1.18rem; font-weight:700; margin:0 0 4px 0; color:var(--neon); text-shadow:0 0 8px rgba(57,255,20,0.5);}
+  .sub{color:var(--muted); font-size:.85rem; margin-bottom:16px; max-width:900px; line-height:1.55;}
+  .layout{display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start;}
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:13px; box-shadow:0 0 18px rgba(57,255,20,0.08);}
+  .panel h2{font-size:.85rem; margin:0 0 8px 0; color:var(--neon); font-weight:700;}
+  canvas{border-radius:5px; display:block; cursor:crosshair; background:#020402;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:9px; align-items:center;}
+  button{background:var(--panel2); color:var(--neon); border:1px solid var(--border); border-radius:5px; padding:6px 10px; font-size:.74rem; cursor:pointer; font-family:inherit;}
+  button:hover{border-color:var(--neon); box-shadow:0 0 8px rgba(57,255,20,0.35);}
+  .stat{font-size:.76rem; color:var(--muted); margin-top:9px; line-height:1.6;}
+  .stat b{color:var(--ink);}
+  .legend{font-size:.7rem; color:var(--muted); margin-top:8px; line-height:1.5;}
+  .sw{display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:6px; vertical-align:-1px;}
+</style>
+</head>
+<body>
+
+<h1>PARAMETER PLANE — f<sub>λ</sub>(z) = z³ + λ/z³</h1>
+<div class="sub">
+Reading the caption of Plates 24–25: the pale central disk is where the Julia set of $f_\lambda$ is a simple closed curve;
+every other disk scattered around it is where the Julia set is a <b>Sierpinski curve</b>; everywhere else, the critical
+orbit of $f_\lambda$ escapes to $\infty$ (or dives through the pole at $0$, which amounts to the same thing) — that escaping
+region is what's shaded here. Drag to zoom on the left; click any point to render its actual Julia set on the right.
+</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <h2>λ-plane</h2>
+    <canvas id="pCanvas" width="380" height="380"></canvas>
+    <div class="row">
+      <button id="resetBtn">↺ reset view</button>
+      <button id="undoBtn">← undo zoom</button>
+    </div>
+    <div class="stat">λ under cursor: <b id="lamLabel">—</b> · click to view its Julia set</div>
+  </div>
+
+  <div class="panel">
+    <h2>Julia set of f<sub>λ</sub> — dynamical plane</h2>
+    <canvas id="jCanvas" width="380" height="380"></canvas>
+    <div class="stat">λ = <b id="jLamLabel">0.1200 + 0.0000i</b></div>
+    <div class="legend">
+      <div><span class="sw" style="background:#39ff14;"></span>escapes to ∞ (or through the pole) — banded by speed</div>
+      <div><span class="sw" style="background:var(--magenta);"></span>attracted to a bounded cycle away from the pole</div>
+      <div>the thin unlit network between them <i>is</i> the Julia set</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function cmul(a,b){return{re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re};}
+function cdiv(a,b){const d=b.re*b.re+b.im*b.im; return{re:(a.re*b.re+a.im*b.im)/d, im:(a.im*b.re-a.re*b.im)/d};}
+function cabs2(a){return a.re*a.re+a.im*a.im;}
+function cpow(re,im,exp){
+  const r=Math.hypot(re,im), th=Math.atan2(im,re);
+  const nr=Math.pow(r,exp), nth=th*exp;
+  return {re:nr*Math.cos(nth), im:nr*Math.sin(nth)};
+}
+function f3(z,lambda){
+  const z3 = cmul(cmul(z,z),z);
+  return { re: z3.re+cdiv(lambda,z3).re, im: z3.im+cdiv(lambda,z3).im };
+}
+
+const ESC=1600, POLE2=1e-10, MAXITER=50;
+
+function escapeIterParam(lambda){
+  let z = cpow(lambda.re, lambda.im, 1/6);
+  for(let i=0;i<MAXITER;i++){
+    const r2=cabs2(z);
+    if(r2>ESC || r2<POLE2) return i;
+    z = f3(z,lambda);
+  }
+  return -1;
+}
+function escapeIterJulia(z, lambda){
+  for(let i=0;i<MAXITER;i++){
+    const r2=cabs2(z);
+    if(r2>ESC || r2<POLE2) return i;
+    z = f3(z,lambda);
+  }
+  return -1;
+}
+
+function colorFor(iter){
+  if(iter<0) return [255,46,196];
+  const t = Math.sqrt(iter/MAXITER);
+  const r = Math.floor(6+t*40);
+  const g = Math.floor(30+t*225);
+  const b = Math.floor(4+t*30);
+  return [r,g,b];
+}
+
+// ---------- param plane ----------
+const pCanvas=document.getElementById('pCanvas'), pctx=pCanvas.getContext('2d');
+const PSZ=pCanvas.width;
+const DEFAULT_P = { reMin:-3, reMax:3, imMin:-3, imMax:3 };
+let pBounds = {...DEFAULT_P};
+const pHistory=[];
+
+function renderParam(){
+  const img=pctx.createImageData(PSZ,PSZ);
+  for(let px=0;px<PSZ;px++){
+    const lre = pBounds.reMin+(px/PSZ)*(pBounds.reMax-pBounds.reMin);
+    for(let py=0;py<PSZ;py++){
+      const lim = pBounds.imMin+(py/PSZ)*(pBounds.imMax-pBounds.imMin);
+      const iter = escapeIterParam({re:lre,im:lim});
+      const [r,g,b] = colorFor(iter);
+      const idx=(py*PSZ+px)*4;
+      img.data[idx]=r; img.data[idx+1]=g; img.data[idx+2]=b; img.data[idx+3]=255;
+    }
+  }
+  pctx.putImageData(img,0,0);
+}
+renderParam();
+
+function pToLambda(x,y){
+  return { re: pBounds.reMin+(x/PSZ)*(pBounds.reMax-pBounds.reMin), im: pBounds.imMin+(y/PSZ)*(pBounds.imMax-pBounds.imMin) };
+}
+
+let dragStart=null;
+pCanvas.addEventListener('mousedown',(e)=>{
+  const r=pCanvas.getBoundingClientRect();
+  dragStart={x:(e.clientX-r.left)/r.width*PSZ, y:(e.clientY-r.top)/r.height*PSZ};
+});
+pCanvas.addEventListener('mousemove',(e)=>{
+  const r=pCanvas.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width*PSZ, y=(e.clientY-r.top)/r.height*PSZ;
+  const lam=pToLambda(x,y);
+  document.getElementById('lamLabel').textContent = lam.re.toFixed(4)+(lam.im>=0?' + ':' − ')+Math.abs(lam.im).toFixed(4)+'i';
+  if(dragStart){
+    renderParam();
+    pctx.strokeStyle='#39ff14'; pctx.lineWidth=1.3;
+    pctx.strokeRect(Math.min(dragStart.x,x), Math.min(dragStart.y,y), Math.abs(x-dragStart.x), Math.abs(y-dragStart.y));
+  }
+});
+pCanvas.addEventListener('mouseup',(e)=>{
+  const r=pCanvas.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width*PSZ, y=(e.clientY-r.top)/r.height*PSZ;
+  if(dragStart && Math.hypot(x-dragStart.x,y-dragStart.y)>6){
+    const x0=Math.min(dragStart.x,x), x1=Math.max(dragStart.x,x);
+    const y0=Math.min(dragStart.y,y), y1=Math.max(dragStart.y,y);
+    pHistory.push({...pBounds});
+    const p0=pToLambda(x0,y0), p1=pToLambda(x1,y1);
+    pBounds = { reMin:p0.re, reMax:p1.re, imMin:p0.im, imMax:p1.im };
+    renderParam();
+  } else {
+    setJulia(pToLambda(x,y));
+  }
+  dragStart=null;
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{ pBounds={...DEFAULT_P}; renderParam(); });
+document.getElementById('undoBtn').addEventListener('click', ()=>{
+  const prev=pHistory.pop(); if(prev){ pBounds=prev; renderParam(); }
+});
+
+// ---------- julia plane ----------
+const jCanvas=document.getElementById('jCanvas'), jctx=jCanvas.getContext('2d');
+const JSZ=jCanvas.width;
+const JR=3;
+function setJulia(lambda){
+  document.getElementById('jLamLabel').textContent = lambda.re.toFixed(4)+(lambda.im>=0?' + ':' − ')+Math.abs(lambda.im).toFixed(4)+'i';
+  const img=jctx.createImageData(JSZ,JSZ);
+  for(let px=0;px<JSZ;px++){
+    const zre=-JR+(px/JSZ)*2*JR;
+    for(let py=0;py<JSZ;py++){
+      const zim=-JR+(py/JSZ)*2*JR;
+      const iter = escapeIterJulia({re:zre,im:zim}, lambda);
+      const [r,g,b]=colorFor(iter);
+      const idx=(py*JSZ+px)*4;
+      img.data[idx]=r; img.data[idx+1]=g; img.data[idx+2]=b; img.data[idx+3]=255;
+    }
+  }
+  jctx.putImageData(img,0,0);
+}
+setJulia({re:0.12, im:0.0});
+</script>
+
+</body>
+</html>

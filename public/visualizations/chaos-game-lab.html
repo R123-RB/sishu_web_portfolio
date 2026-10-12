@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chaos Game Lab — §14.9 Iterated Function Systems</title>
+<style>
+  :root{
+    --bg:#11151d;
+    --panel:#171d29;
+    --panel2:#1d2536;
+    --line:#2b3450;
+    --line-soft:#232b40;
+    --ink:#f1efe6;
+    --ink-dim:#b3bcce;
+    --ink-faint:#7c869c;
+    --amber:#e0ab4b;
+    --teal:#6fb3ab;
+    --rose:#c97b6a;
+    --serif: Iowan Old Style, Palatino Linotype, Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.55;
+  }
+  a{color:var(--teal);}
+
+  .runninghead{
+    max-width:1180px;
+    margin:0 auto;
+    padding:22px 24px 0 24px;
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.02em;
+    color:var(--ink-faint);
+    display:flex;
+    justify-content:space-between;
+  }
+  header.hero{
+    max-width:1180px;
+    margin:0 auto;
+    padding:6px 24px 22px 24px;
+    border-bottom:1px solid var(--line);
+  }
+  header.hero h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(28px,4vw,40px);
+    margin:6px 0 8px 0;
+    letter-spacing:0.01em;
+  }
+  header.hero p{
+    max-width:66ch;
+    color:var(--ink-dim);
+    margin:0;
+    font-size:16.5px;
+    line-height:1.6;
+  }
+
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 24px 80px 24px;
+    display:grid;
+    grid-template-columns:minmax(320px,460px) 1fr;
+    gap:30px;
+    align-items:start;
+  }
+  @media (max-width:900px){
+    main{grid-template-columns:1fr;}
+    .lab{position:static !important;}
+  }
+
+  /* ---------- LAB (left) ---------- */
+  .lab{
+    position:sticky;
+    top:20px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+  }
+  .lab h2{
+    font-family:var(--serif);
+    font-size:19px;
+    margin:0 0 4px 0;
+    font-weight:600;
+  }
+  .lab .hint{
+    color:var(--ink-dim);
+    font-size:13px;
+    margin:0 0 14px 0;
+  }
+  .canvas-wrap{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:8px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    background:#0c0f16;
+    touch-action:none;
+    cursor:crosshair;
+  }
+  .canvas-wrap canvas{
+    position:absolute;
+    top:0; left:0;
+    width:100%;
+    height:100%;
+  }
+  .canvas-badge{
+    position:absolute;
+    top:8px; left:8px;
+    background:rgba(12,15,22,0.72);
+    border:1px solid var(--line-soft);
+    color:var(--ink-dim);
+    font-family:var(--mono);
+    font-size:11px;
+    padding:3px 7px;
+    border-radius:5px;
+    pointer-events:none;
+  }
+  .canvas-badge b{color:var(--amber); font-weight:600;}
+
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+  }
+  button{
+    font-family:var(--sans);
+    font-size:13px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:var(--panel2);
+    color:var(--ink);
+    padding:7px 11px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  button:hover{border-color:var(--teal);}
+  button.primary{
+    background:var(--amber);
+    color:#191307;
+    border-color:var(--amber);
+    font-weight:600;
+  }
+  button.primary:hover{filter:brightness(1.06);}
+  button.ghost{background:transparent;}
+  button.active{border-color:var(--teal); color:var(--teal);}
+  button:disabled{opacity:0.4; cursor:default;}
+
+  .field-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:10px 0 2px 0;
+    font-size:12.5px;
+    color:var(--ink-dim);
+  }
+  .field-row input[type=range]{flex:1; accent-color:var(--teal);}
+  .field-row span.val{
+    font-family:var(--mono);
+    color:var(--ink);
+    min-width:44px;
+    text-align:right;
+  }
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:12.5px;
+    color:var(--ink-dim);
+    margin:6px 0;
+  }
+  .toggle-row input{accent-color:var(--teal);}
+
+  .divider{
+    border:none;
+    border-top:1px solid var(--line);
+    margin:16px 0;
+  }
+
+  .presets{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+  }
+  .presets button{font-size:12.5px; padding:8px 9px; text-align:left; line-height:1.3;}
+  .preset-group-label{
+    font-size:11.5px;
+    text-transform:none;
+    color:var(--ink-dim);
+    margin:14px 0 6px 0;
+    font-family:var(--mono);
+    font-weight:600;
+  }
+
+  .points-table{
+    margin-top:6px;
+    max-height:230px;
+    overflow-y:auto;
+    border:1px solid var(--line-soft);
+    border-radius:6px;
+  }
+  .point-row{
+    display:grid;
+    grid-template-columns:16px 1fr 26px;
+    gap:8px;
+    align-items:center;
+    padding:8px 10px;
+    border-bottom:1px solid var(--line-soft);
+    font-size:12px;
+  }
+  .point-row:last-child{border-bottom:none;}
+  .swatch{width:12px; height:12px; border-radius:3px;}
+  .point-row .mini-slider{display:flex; align-items:center; gap:6px; margin:2px 0;}
+  .point-row .mini-slider label{width:34px; color:var(--ink-faint); font-family:var(--mono); font-size:10.5px;}
+  .point-row input[type=range]{flex:1; height:14px; accent-color:var(--teal);}
+  .point-row .coord{color:var(--ink-faint); font-family:var(--mono); font-size:10.5px;}
+  .point-row button.del{
+    background:transparent; border:none; color:var(--rose);
+    font-size:15px; padding:0; line-height:1;
+  }
+
+  .stats{
+    margin-top:14px;
+    background:var(--panel2);
+    border:1px solid var(--line-soft);
+    border-radius:8px;
+    padding:14px 16px;
+    font-size:13.5px;
+  }
+  .stats .row{display:flex; justify-content:space-between; margin:4px 0; color:var(--ink-dim);}
+  .stats .row b{color:var(--ink); font-family:var(--mono); font-weight:600; font-size:14px;}
+  .stats .dim{
+    font-family:var(--mono);
+    font-size:22px;
+    font-weight:600;
+    color:var(--amber);
+    margin:4px 0 0 0;
+  }
+
+  /* ---------- NOTEBOOK (right) ---------- */
+  .notebook h2.sec{
+    font-family:var(--serif);
+    font-size:23px;
+    font-weight:600;
+    margin:0 0 8px 0;
+  }
+  .notebook > .intro{
+    color:var(--ink-dim);
+    font-size:16px;
+    line-height:1.65;
+    max-width:70ch;
+    margin-bottom:24px;
+  }
+  .notebook code{
+    font-family:var(--mono);
+    background:var(--panel2);
+    padding:1px 6px;
+    border-radius:4px;
+    font-size:0.94em;
+    color:var(--ink);
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:22px 24px;
+    margin-bottom:20px;
+  }
+  .card h3{
+    font-family:var(--serif);
+    font-size:20px;
+    font-weight:700;
+    margin:0 0 6px 0;
+    display:flex;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:10px;
+    color:#f4f2ea;
+  }
+  .tag{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--teal);
+    border:1px solid var(--teal);
+    border-radius:20px;
+    padding:2px 9px;
+    white-space:nowrap;
+  }
+  .annot{
+    color:var(--ink-dim);
+    font-size:13.5px;
+    font-style:italic;
+    margin:0 0 12px 0;
+  }
+  .card p{
+    font-size:16px;
+    line-height:1.65;
+    margin:10px 0;
+    color:var(--ink);
+  }
+  .card ul{
+    font-size:16px;
+    line-height:1.6;
+    margin:10px 0;
+    padding-left:22px;
+  }
+  .card ul li{margin:6px 0;}
+  .card ul li strong{color:var(--amber);}
+  .caveat{
+    font-size:13.5px;
+    line-height:1.55;
+    color:var(--ink-dim);
+    border-left:2px solid var(--line);
+    padding-left:12px;
+    margin-top:12px;
+  }
+  .keypoint{
+    background:rgba(224,171,75,0.09);
+    border-left:3px solid var(--amber);
+    padding:12px 16px;
+    border-radius:0 8px 8px 0;
+    font-size:15.5px;
+    line-height:1.6;
+    margin:14px 0;
+    color:#f4f2ea;
+  }
+  .keypoint b{color:var(--amber);}
+  .load-btn{
+    margin-top:10px;
+  }
+  .checklist{
+    background:var(--panel2);
+    border:1px solid var(--line-soft);
+    border-radius:8px;
+    padding:16px 20px;
+    font-size:15px;
+    line-height:1.6;
+    margin-top:10px;
+    color:var(--ink);
+  }
+  .checklist strong{color:var(--amber);}
+  .checklist li{margin:7px 0;}
+  footer{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 24px 40px 24px;
+    color:var(--ink-faint);
+    font-size:12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="runninghead">
+  <span>14 · FRACTALS</span>
+  <span>§14.9 — EXPERIMENT: FIND THE ITERATED FUNCTION SYSTEMS</span>
+</div>
+<header class="hero">
+  <h1>Chaos Game Lab</h1>
+  <p>A working instrument for the Section 14.9 experiment. Build an iterated function system, watch the chaos game render its attractor, and compare the result against Figures 14.20–14.23 — then read through the worked reasoning for each one on the right.</p>
+</header>
+
+<main>
+  <!-- ======================= LEFT: THE INSTRUMENT ======================= -->
+  <div class="lab">
+    <h2>The instrument</h2>
+    <p class="hint">Click empty space to add a contraction point. Drag an existing point to move it. Everything below reacts live.</p>
+
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="bg"></canvas>
+      <canvas id="fg"></canvas>
+      <div class="canvas-badge" id="badge">plotted: <b>0</b></div>
+    </div>
+
+    <div class="toolbar">
+      <button class="primary" id="runBtn">▶ Run</button>
+      <button id="resetBtn">Reset points</button>
+      <button id="clearBtn">Clear canvas</button>
+      <button id="fitBtn" class="ghost">Fit view</button>
+    </div>
+
+    <div class="field-row">
+      <label style="width:88px;">speed</label>
+      <input type="range" id="speedSlider" min="50" max="4000" value="900" step="50">
+      <span class="val" id="speedVal">900/f</span>
+    </div>
+
+    <div class="toggle-row"><input type="checkbox" id="colorByGen" checked><label for="colorByGen">colour each point by which contraction produced it</label></div>
+    <div class="toggle-row"><input type="checkbox" id="showSub"><label for="showSub">show what each contraction does to the bounding square</label></div>
+    <div class="toggle-row"><input type="checkbox" id="useProb"><label for="useProb">use unequal probabilities (see Further Question 3)</label></div>
+
+    <hr class="divider">
+    <div class="preset-group-label">named fractals</div>
+    <div class="presets">
+      <button data-preset="sierpinski">Sierpinski triangle</button>
+      <button data-preset="cantorDust2">Diagonal Cantor dust</button>
+      <button data-preset="vicsekCross">Vicsek / cross fractal</button>
+      <button data-preset="blank">Blank canvas</button>
+    </div>
+
+    <div class="preset-group-label">§14.9 reconstructions</div>
+    <div class="presets">
+      <button data-preset="tree20a">Fig 14.20(a) tree</button>
+      <button data-preset="flower20b">Fig 14.20(b) flower</button>
+      <button data-preset="diagDust21a">Fig 14.21(a) dust</button>
+      <button data-preset="rotSquare21b">Fig 14.21(b) diamonds</button>
+      <button data-preset="fern21c">Fig 14.21(c) fern</button>
+      <button data-preset="crossDendritic21d">Fig 14.21(d) cross</button>
+      <button data-preset="nonFractal">Fig 14.23 non-fractal</button>
+    </div>
+
+    <div class="preset-group-label">Fig 14.22 — with rotation</div>
+    <div class="presets">
+      <button data-preset="dendriticCross22a">Fig 14.22 top — dendritic cross</button>
+      <button data-preset="branchingTree22b">Fig 14.22 bottom — branching tree</button>
+    </div>
+
+    <hr class="divider">
+    <div id="pointsTable" class="points-table"></div>
+
+    <div class="stats">
+      <div class="row">self-similar pieces <b id="statN">–</b></div>
+      <div class="row">contraction ratio(s) <b id="statR">–</b></div>
+      <div class="row">similarity dimension d, solving <span style="font-family:var(--mono)">Σrᵢ^d = 1</span></div>
+      <div class="dim" id="statDim">–</div>
+    </div>
+  </div>
+
+  <!-- ======================= RIGHT: THE NOTEBOOK ======================= -->
+  <div class="notebook">
+    <h2 class="sec">Lab notebook</h2>
+    <p class="intro">Section 14.9 gives you <strong>eight</strong> unlabeled fractals across Figures 14.20–14.22 and asks you to reverse-engineer the iterated function system behind each one — how many self-similar pieces, what contraction factor, what (if any) rotation. There is no printed answer key: it's a discovery exercise. What follows are <em>reasoned reconstructions</em> — plausible IFS parameters consistent with each figure's description and your own annotations — that you can load into the instrument on the left, run, and compare against your actual textbook pages. Tune the sliders until your version matches.</p>
+
+    <div class="card">
+      <h3>Reading the machine</h3>
+      <p>Every contraction here has the form from the chapter,</p>
+      <p style="font-family:var(--mono); text-align:center; color:var(--amber);">A(p) = β · R(θ) · (p − p₀) + p₀</p>
+      <p>where <code>p₀</code> is the fixed point, <code>β</code> the contraction ratio (0&lt;β&lt;1), and <code>R(θ)</code> an optional rotation. The chaos game repeatedly applies a <em>randomly chosen</em> contraction to the current point; after discarding an initial transient, the orbit traces out the attractor.</p>
+      <div class="keypoint">For a self-similar attractor built from <b>N</b> pieces with ratios r₁,…,r_N, the similarity dimension <b>d</b> solves Moran's equation <b>Σrᵢ^d = 1</b> — which collapses to the familiar <b>d = ln N / ln(1/r)</b> when every ratio is equal. Rotation never enters this equation: it changes orientation, not size.</div>
+    </div>
+
+    <!-- 14.20(a) -->
+    <div class="card">
+      <h3>Figure 14.20(a) <span class="tag">binary branching tree</span></h3>
+      <p class="annot">Your annotation: "binary branching fractal tree."</p>
+      <p>The image reads as a trunk that forks into two ever-shrinking copies of itself. Because Figures 14.20–14.21 are explicitly built <strong>without rotation</strong>, the branching look has to come from pure scaling-and-translating, not from angled contractions — the same trick used for the box fractal's cross motif, just arranged so the copies climb upward instead of tiling a square.</p>
+      <p>A three-point system reproduces this well: one contraction continuing the trunk near the base, and two smaller ones offset left and right near the top.</p>
+      <ul>
+        <li>N = 3 self-similar pieces</li>
+        <li>ratios around β ≈ 0.38–0.42 (unequal, so use the general Moran equation rather than ln N/ln(1/β))</li>
+        <li>no rotation on any piece</li>
+      </ul>
+      <button class="load-btn" data-preset="tree20a">Load this reconstruction →</button>
+      <p class="caveat">Check it against your page: if your tree looks more symmetric, try equal ratios for all three points; if the branch angle looks sharper, move the two upper points further apart.</p>
+    </div>
+
+    <!-- 14.20(b) -->
+    <div class="card">
+      <h3>Figure 14.20(b)</h3>
+      <p>This one is more symmetric than the tree — a ring-like cluster with several repeated motifs arranged around a centre. A natural hypothesis: eight contraction points spaced evenly around a circle, all with the same ratio and no rotation, producing an eight-armed self-similar cluster.</p>
+      <ul>
+        <li>N = 8 self-similar pieces (try N = 6 too, if your figure looks six-fold instead)</li>
+        <li>ratio β ≈ 0.32, equal for all eight</li>
+        <li>no rotation</li>
+      </ul>
+      <button class="load-btn" data-preset="flower20b">Load this reconstruction →</button>
+      <p class="caveat">Count the "petals" in your actual figure first — that count <em>is</em> N. This is the single most reliable thing to read directly off the picture before touching ratios.</p>
+    </div>
+
+    <!-- 14.21(a) -->
+    <div class="card">
+      <h3>Figure 14.21(a) <span class="tag">Cantor-type dust</span></h3>
+      <p class="annot">Your annotation: "Diagonal Cantor-type branch dust."</p>
+      <p>A dust of disconnected points strung out along a diagonal is exactly what you get from two contraction points at opposite corners with a small ratio — the same construction used earlier for the 1-D Cantor set, just embedded in the plane along a diagonal instead of an interval. Adding a third, off-axis point gives it the branching texture your annotation describes, rather than a perfectly straight line.</p>
+      <ul>
+        <li>N = 3 pieces (2 on the main diagonal, 1 branching off it)</li>
+        <li>ratio β = 1/3 on the diagonal pair, slightly smaller (~0.28) on the branch point</li>
+        <li>no rotation — this is a scaling-only "Cantor set in 2-D"</li>
+      </ul>
+      <button class="load-btn" data-preset="diagDust21a">Load this reconstruction →</button>
+    </div>
+
+    <!-- 14.21(b) -->
+    <div class="card">
+      <h3>Figure 14.21(b)</h3>
+      <p class="annot">Your annotation: "rotated square, cluster fractal."</p>
+      <p>Important subtlety: the text states plainly that <em>every</em> fractal in Figures 14.20 and 14.21 comes from an IFS <strong>without rotation</strong> — genuine rotated contractions aren't introduced until Figure 14.22. So the diamond look here is an optical effect of <em>where the contraction points sit</em> (at the midpoints of the sides, forming a diamond arrangement), not a rotation matrix in the formula. This is a good example of why it's worth trying the "no-rotation" hypothesis first, even when a picture looks rotated.</p>
+      <ul>
+        <li>N = 8: four points at the edge-midpoints of the square (larger ratio) plus four at the corners (smaller ratio)</li>
+        <li>two different ratios: β ≈ 0.32 (edges) and β ≈ 0.22 (corners)</li>
+        <li>no rotation on any piece</li>
+      </ul>
+      <button class="load-btn" data-preset="rotSquare21b">Load this reconstruction →</button>
+      <p class="caveat">If loading this and tuning ratios still can't reproduce the diamond rotation you see, that's real evidence you've found one of the genuinely-rotated cases meant for Figure 14.22 in Further Question 1 below — worth noting in your essay either way.</p>
+    </div>
+
+    <!-- 14.21(c) -->
+    <div class="card">
+      <h3>Figure 14.21(c) <span class="tag">Cantor fern</span></h3>
+      <p class="annot">Your annotation: "Disconnected branch Cantor fern."</p>
+      <p>A fern-like branching structure that stays disconnected (small gaps between fronds, never touching) is what you'd get from a small number of contractions where at least two are angled relative to a central stem. This is one of the few §14.9 figures where allowing rotation earns its keep, even though the surrounding text says 14.20/14.21 avoid it — if a rotation-free version won't reproduce the asymmetric fronds you see, this is a natural candidate for one of the rotated systems.</p>
+      <ul>
+        <li>N = 3: a stem contraction plus two symmetric side-fronds</li>
+        <li>ratio β ≈ 0.4 on all three</li>
+        <li>the two side fronds rotated ±25°–35° from the stem</li>
+      </ul>
+      <button class="load-btn" data-preset="fern21c">Load this reconstruction →</button>
+    </div>
+
+    <!-- 14.21(d) -->
+    <div class="card">
+      <h3>Figure 14.21(d) <span class="tag">classic cross fractal</span></h3>
+      <p class="annot">Your annotation: "classic cross-shaped dendritic fractal."</p>
+      <p>This is the most confidently identifiable of the six: a cross/plus-shaped dendritic pattern with fourfold symmetry, radiating from a centre, is the signature of the five-point <strong>box (Vicsek) fractal</strong> — exactly the IFS built from the four corners plus the centre of the unit square, each contracted by 1/3, that Figure 14.17 walked through earlier in the chapter. No rotation needed; the cross shape falls straight out of the plus-shaped arrangement of the five fixed points.</p>
+      <div class="keypoint"><b>N = 5</b> pieces (4 corners + centre), ratio <b>β = 1/3</b> for all five, <b>no rotation</b>. Similarity dimension <b>d = ln 5 / ln 3 ≈ 1.465</b>.</div>
+      <button class="load-btn" data-preset="crossDendritic21d">Load this reconstruction →</button>
+    </div>
+
+    <!-- 14.22 top -->
+    <div class="card">
+      <h3>Figure 14.22, top <span class="tag">rotation</span></h3>
+      <p class="annot">Your annotation: "dendritic cross fractal."</p>
+      <p>This is the caption's own promised example of an IFS with <strong>nonzero rotation</strong>. The shape radiates outward in a cross-like pattern, but unlike the plain box/Vicsek cross from 14.21(d), each arm doesn't just shrink — it also <em>twists</em> as it repeats, giving the branch tips that pinwheeling, dendritic look rather than a flat plus sign.</p>
+      <p>A four-point system with 4-fold rotational symmetry reproduces this: one contraction point along each of the four compass directions from the centre, each contracting by the same ratio <em>and</em> rotating by the same angle.</p>
+      <div class="keypoint">Reading it off the picture: <b>N = 4</b> self-similar pieces (one per arm), ratio <b>β ≈ 0.34</b>, and a shared rotation of roughly <b>θ = 90°</b> per contraction — the twist that turns a static cross into a dendritic one.</div>
+      <button class="load-btn" data-preset="dendriticCross22a">Load this reconstruction →</button>
+      <p class="caveat">If your printed figure's arms curl the other way, flip the sign of θ; if they look less twisted, try θ around 45° instead of 90°.</p>
+    </div>
+
+    <!-- 14.22 bottom -->
+    <div class="card">
+      <h3>Figure 14.22, bottom <span class="tag">rotation</span></h3>
+      <p class="annot">Your annotation: "classic branching tree fractal."</p>
+      <p>Compare this directly with the tree from 14.20(a): that one was built <em>without</em> rotation and needed three off-centre points to fake a branch look. This tree is denser, more symmetric, and far more convincingly plant-like — the signature of a true two-branch system where each contraction rotates as well as shrinks, splitting every branch into two smaller, angled copies of the whole tree.</p>
+      <div class="keypoint">Reading it off the picture: just <b>N = 2</b> self-similar pieces (left branch, right branch), a fairly gentle ratio <b>β ≈ 0.55–0.6</b> (branches don't shrink too fast, so the tree stays bushy), and opposite rotations of about <b>θ = ±30°</b> from the trunk direction.</div>
+      <button class="load-btn" data-preset="branchingTree22b">Load this reconstruction →</button>
+      <p class="caveat">This is the cleanest illustration in the whole set of why rotation matters: the piece-count and ratio alone (N=2, β≈0.58) would also fit a much plainer, non-branching shape — it's the rotation angle that turns those two contractions into something recognizably tree-shaped.</p>
+    </div>
+
+    <div class="checklist">
+      <strong>What the write-up asks for (Results):</strong>
+      <ul>
+        <li>State which IFS you chose for each image, and <em>why</em> — what feature of the picture (symmetry count, gap size, branching angle) led you there.</li>
+        <li>Draw or screenshot what each individual contraction does to the bounding square — turn on <em>"show what each contraction does to the bounding square"</em> above to generate that picture directly.</li>
+      </ul>
+    </div>
+
+    <!-- Further Q1 -->
+    <div class="card">
+      <h3>Further Question 1 <span class="tag">rotation, Fig 14.22</span></h3>
+      <p>Figure 14.22 (not reproduced here) introduces IFSs whose contractions <em>do</em> rotate — pairs of fractals with the same self-similar-piece count as some of 14.20/14.21, but with a nonzero rotation angle θ added to the formula. The text's own hint is the important part: finding θ and the fixed points can be genuinely hard by eye, but you don't need either one to answer "how many self-similar pieces, and what's the contraction factor?"</p>
+      <p>Both of those come from simpler visual evidence:</p>
+      <ul>
+        <li><strong>N</strong> = count the repeated motifs in the image directly, the same way you would for a non-rotated fractal.</li>
+        <li><strong>β</strong> = compare the size of one self-similar piece to the size of the whole figure; that ratio is β regardless of what angle the piece was rotated through to get there.</li>
+      </ul>
+      <p>Rotation changes <em>orientation</em>, not <em>size</em> — so the similarity-dimension formula Σβᵢ^d = 1 still applies unchanged once you have N and the ratios; only recovering the exact fixed points and θ requires more careful geometric detective work (e.g. matching where corners of the bounding square land).</p>
+    </div>
+
+    <!-- Further Q2 -->
+    <div class="card">
+      <h3>Further Question 2 <span class="tag">the non-fractal, Fig 14.23</span></h3>
+      <p>This is the most conceptually important further question: an IFS whose output is <em>not</em> a fractal at all. It happens when the contracted copies overlap so much that their union stops being a delicate, gapped, self-similar dust and instead becomes a single solid filled region.</p>
+      <p>A clean way to produce exactly this: take the box fractal's four corner points, but push the contraction ratio <em>up</em> past 1/2 — say β = 0.6 instead of 1/3. Each of the four sub-squares now overlaps its neighbours in a band around the centre.</p>
+      <ul>
+        <li>overlap ⇒ some regions get visited by <em>more than one</em> contraction, which is exactly the "darker shaded regions" the text points you toward — those are the pixels reachable by two or more of the four maps</li>
+        <li>because the copies overlap enough to tile the whole square with no gaps left over, the attractor becomes the <em>entire filled unit square</em></li>
+      </ul>
+      <div class="keypoint">A filled square has similarity dimension <b>2</b> <em>and</em> topological dimension <b>2</b> — they're equal, so by the §14.2 definition (fractal dimension must <em>exceed</em> topological dimension) this image fails to qualify as a fractal, even though it was built by the exact same chaos-game machinery as every fractal in this chapter.</div>
+      <button class="load-btn" data-preset="nonFractal">Load this non-fractal control →</button>
+      <p class="caveat">Watch the canvas fill in solid, with a visibly darker cross near the centre where all four sub-squares overlap — that darker region is the direct visual signature of overlap causing loss of fractality.</p>
+    </div>
+
+    <!-- Further Q3 -->
+    <div class="card">
+      <h3>Further Question 3 <span class="tag">the Starfish movie</span></h3>
+      <p>Without the actual movie in front of us, the text's own hint is the one worth taking seriously: <em>"probability is involved."</em> That points at a real extension of the chaos game beyond anything used so far in this chapter — assigning each contraction its own probability of being chosen, rather than picking uniformly at random among N vertices.</p>
+      <p>The geometric attractor — the actual <em>set</em> of points the orbit can reach — depends only on the fixed points and ratios, exactly as in every other example here. Changing the probabilities doesn't change that set at all. What it changes is <em>how often</em> different regions get visited, which — once you're plotting a finite number of iterations, as any real image must — shows up as some parts of the picture looking denser or more "filled in" than others. That's precisely how a handful of contractions can be made to produce a shaded, almost photographic image (this is the same trick behind the famous Barnsley fern): equal geometry, unequal visiting frequency.</p>
+      <p>Turn on <em>"use unequal probabilities"</em> above on any preset and watch the same attractor develop uneven shading as a demonstration.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  Companion exploration tool for Robert L. Devaney's <em>A First Course in Chaotic Dynamical Systems</em>, §14.9. The reconstructions above are reasoned starting hypotheses for an open-ended discovery exercise, not a published answer key — tune them against your own copy of Figures 14.20–14.23.
+</footer>
+
+<script>
+(function(){
+  const bg = document.getElementById('bg');
+  const fg = document.getElementById('fg');
+  const wrap = document.getElementById('canvasWrap');
+  const bgx = bg.getContext('2d');
+  const fgx = fg.getContext('2d');
+  const badge = document.getElementById('badge');
+  const pointsTableEl = document.getElementById('pointsTable');
+  const statN = document.getElementById('statN');
+  const statR = document.getElementById('statR');
+  const statDim = document.getElementById('statDim');
+  const runBtn = document.getElementById('runBtn');
+  const speedSlider = document.getElementById('speedSlider');
+  const speedVal = document.getElementById('speedVal');
+  const colorByGenCb = document.getElementById('colorByGen');
+  const showSubCb = document.getElementById('showSub');
+  const useProbCb = document.getElementById('useProb');
+
+  let dpr = Math.max(1, window.devicePixelRatio || 1);
+  let cssSize = 0;
+
+  const HUES = [42, 175, 12, 265, 100, 320, 200, 60, 340, 150];
+  function hueColor(i, alpha){
+    const h = HUES[i % HUES.length];
+    return `hsla(${h}, 62%, 58%, ${alpha})`;
+  }
+
+  let points = []; // {x,y,r,theta,weight}
+  let viewBox = {xmin:-0.15, xmax:1.15, ymin:-0.15, ymax:1.15};
+  let running = false;
+  let cur = {x:0.5, y:0.5};
+  let iterCount = 0;
+  let plotted = 0;
+  const BURN_IN = 25;
+  const CAP = 180000;
+  let addMode = true;
+  let dragIndex = -1;
+
+  function resize(){
+    const rect = wrap.getBoundingClientRect();
+    cssSize = rect.width;
+    dpr = Math.max(1, window.devicePixelRatio || 1);
+    [bg, fg].forEach(c=>{
+      c.width = cssSize * dpr;
+      c.height = cssSize * dpr;
+    });
+    bgx.setTransform(dpr,0,0,dpr,0,0);
+    fgx.setTransform(dpr,0,0,dpr,0,0);
+    drawBackground();
+  }
+  window.addEventListener('resize', resize);
+
+  function toCanvas(wx, wy){
+    const sx = (wx - viewBox.xmin) / (viewBox.xmax - viewBox.xmin) * cssSize;
+    const sy = cssSize - (wy - viewBox.ymin) / (viewBox.ymax - viewBox.ymin) * cssSize;
+    return [sx, sy];
+  }
+  function toWorld(sx, sy){
+    const wx = viewBox.xmin + (sx / cssSize) * (viewBox.xmax - viewBox.xmin);
+    const wy = viewBox.ymin + (1 - sy / cssSize) * (viewBox.ymax - viewBox.ymin);
+    return [wx, wy];
+  }
+
+  function fitView(){
+    if(points.length === 0){ viewBox = {xmin:-0.15,xmax:1.15,ymin:-0.15,ymax:1.15}; drawBackground(); return; }
+    let xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+    let xmin = Math.min(0, ...xs), xmax = Math.max(1, ...xs);
+    let ymin = Math.min(0, ...ys), ymax = Math.max(1, ...ys);
+    const padX = (xmax - xmin) * 0.18 || 0.2;
+    const padY = (ymax - ymin) * 0.18 || 0.2;
+    xmin -= padX; xmax += padX; ymin -= padY; ymax += padY;
+    // make square
+    const w = xmax-xmin, h = ymax-ymin;
+    if(w > h){ const d=(w-h)/2; ymin-=d; ymax+=d; } else { const d=(h-w)/2; xmin-=d; xmax+=d; }
+    viewBox = {xmin,xmax,ymin,ymax};
+    drawBackground();
+  }
+
+  function clearCanvas(){
+    fgx.clearRect(0,0,cssSize,cssSize);
+    plotted = 0; iterCount = 0;
+    cur = {x:(viewBox.xmin+viewBox.xmax)/2, y:(viewBox.ymin+viewBox.ymax)/2};
+    updateBadge();
+  }
+  function updateBadge(){ badge.innerHTML = `plotted: <b>${plotted.toLocaleString()}</b>`; }
+
+  function drawBackground(){
+    bgx.clearRect(0,0,cssSize,cssSize);
+    bgx.fillStyle = '#0c0f16';
+    bgx.fillRect(0,0,cssSize,cssSize);
+
+    // grid at 0 and 1 boundaries + tenths within visible span if the unit square is in view
+    bgx.strokeStyle = 'rgba(255,255,255,0.05)';
+    bgx.lineWidth = 1;
+    for(let t=0;t<=10;t++){
+      const v = t/10;
+      if(v>=viewBox.xmin && v<=viewBox.xmax){
+        const [sx] = toCanvas(v, 0);
+        bgx.beginPath(); bgx.moveTo(sx,0); bgx.lineTo(sx,cssSize); bgx.stroke();
+      }
+      if(v>=viewBox.ymin && v<=viewBox.ymax){
+        const [,sy] = toCanvas(0, v);
+        bgx.beginPath(); bgx.moveTo(0,sy); bgx.lineTo(cssSize,sy); bgx.stroke();
+      }
+    }
+    // unit square outline
+    bgx.strokeStyle = 'rgba(255,255,255,0.16)';
+    bgx.lineWidth = 1.5;
+    const c0 = toCanvas(0,0), c1 = toCanvas(1,1);
+    bgx.strokeRect(Math.min(c0[0],c1[0]), Math.min(c0[1],c1[1]), Math.abs(c1[0]-c0[0]), Math.abs(c1[1]-c0[1]));
+
+    // subsquare images under each contraction, if enabled
+    if(showSubCb.checked){
+      const corners = [[viewBox.xmin,viewBox.ymin],[viewBox.xmax,viewBox.ymin],[viewBox.xmax,viewBox.ymax],[viewBox.xmin,viewBox.ymax]];
+      points.forEach((P,i)=>{
+        const img = corners.map(([x,y])=>applyContraction(P,{x,y}));
+        bgx.beginPath();
+        img.forEach(([wx,wy],k)=>{
+          const [sx,sy] = toCanvas(wx,wy);
+          if(k===0) bgx.moveTo(sx,sy); else bgx.lineTo(sx,sy);
+        });
+        bgx.closePath();
+        bgx.fillStyle = hueColor(i,0.10);
+        bgx.strokeStyle = hueColor(i,0.85);
+        bgx.lineWidth = 1.4;
+        bgx.fill(); bgx.stroke();
+      });
+    }
+
+    // point markers
+    points.forEach((P,i)=>{
+      const [sx,sy] = toCanvas(P.x,P.y);
+      bgx.beginPath();
+      bgx.arc(sx,sy,6,0,Math.PI*2);
+      bgx.fillStyle = hueColor(i,1);
+      bgx.fill();
+      bgx.strokeStyle = '#0c0f16';
+      bgx.lineWidth = 2;
+      bgx.stroke();
+      bgx.fillStyle = '#0c0f16';
+      bgx.font = '9px monospace';
+      bgx.textAlign = 'center';
+      bgx.textBaseline = 'middle';
+      bgx.fillText(i, sx, sy+0.5);
+    });
+  }
+
+  function applyContraction(P, p){
+    let dx = p.x - P.x, dy = p.y - P.y;
+    if(P.theta){
+      const c = Math.cos(P.theta), s = Math.sin(P.theta);
+      const ndx = dx*c - dy*s, ndy = dx*s + dy*c;
+      dx = ndx; dy = ndy;
+    }
+    dx *= P.r; dy *= P.r;
+    return [P.x + dx, P.y + dy];
+  }
+
+  function pickIndex(){
+    if(!useProbCb.checked || points.length===0){
+      return Math.floor(Math.random()*points.length);
+    }
+    const weights = points.map(p=>p.weight!==undefined?p.weight:1);
+    const total = weights.reduce((a,b)=>a+b,0);
+    let r = Math.random()*total;
+    for(let i=0;i<weights.length;i++){
+      r -= weights[i];
+      if(r<=0) return i;
+    }
+    return weights.length-1;
+  }
+
+  function stepBatch(n){
+    if(points.length===0) return;
+    const colorByGen = colorByGenCb.checked;
+    for(let k=0;k<n;k++){
+      const idx = pickIndex();
+      const P = points[idx];
+      const [nx, ny] = applyContraction(P, cur);
+      cur.x = nx; cur.y = ny;
+      iterCount++;
+      if(iterCount > BURN_IN){
+        const [sx,sy] = toCanvas(cur.x, cur.y);
+        fgx.fillStyle = colorByGen ? hueColor(idx, 0.55) : 'rgba(224,171,75,0.55)';
+        fgx.fillRect(sx, sy, 1.3, 1.3);
+        plotted++;
+      }
+    }
+    if(plotted % 400 < n) updateBadge();
+    if(plotted >= CAP){ setRunning(false); updateBadge(); }
+  }
+
+  let rafId = null;
+  function loop(){
+    stepBatch(parseInt(speedSlider.value,10));
+    if(running) rafId = requestAnimationFrame(loop);
+  }
+  function setRunning(v){
+    running = v;
+    runBtn.textContent = running ? '⏸ Pause' : '▶ Run';
+    runBtn.classList.toggle('active', running);
+    if(running) rafId = requestAnimationFrame(loop);
+    else if(rafId) cancelAnimationFrame(rafId);
+  }
+
+  // ---------- Moran dimension solver ----------
+  function solveMoranDimension(ratios){
+    if(ratios.length===0) return 0;
+    if(ratios.length===1) return 0;
+    const f = d => ratios.reduce((s,r)=> s + Math.pow(r,d), 0) - 1;
+    let lo=0, hi=8;
+    if(f(hi) > 0) hi = 40;
+    for(let i=0;i<80;i++){
+      const mid = (lo+hi)/2;
+      if(f(mid) > 0) lo = mid; else hi = mid;
+    }
+    return (lo+hi)/2;
+  }
+
+  function updateStats(){
+    const N = points.length;
+    statN.textContent = N ? N : '–';
+    if(N===0){ statR.textContent='–'; statDim.textContent='–'; return; }
+    const ratios = points.map(p=>p.r);
+    const allEqual = ratios.every(r=>Math.abs(r-ratios[0])<1e-6);
+    statR.textContent = allEqual ? ratios[0].toFixed(3) : ratios.map(r=>r.toFixed(2)).join(', ');
+    const d = solveMoranDimension(ratios);
+    statDim.textContent = 'd ≈ ' + d.toFixed(3) + (allEqual ? '  (= ln N / ln 1/r)' : '');
+  }
+
+  // ---------- points table UI ----------
+  function renderPointsTable(){
+    pointsTableEl.innerHTML = '';
+    points.forEach((P,i)=>{
+      const row = document.createElement('div');
+      row.className = 'point-row';
+      const swatch = document.createElement('div');
+      swatch.className = 'swatch';
+      swatch.style.background = hueColor(i,1);
+      const mid = document.createElement('div');
+      mid.innerHTML = `<div class="coord">A${i}  fixed at (${P.x.toFixed(2)}, ${P.y.toFixed(2)})</div>`;
+
+      const rRow = document.createElement('div');
+      rRow.className = 'mini-slider';
+      const rLabel = document.createElement('label'); rLabel.textContent = 'β='+P.r.toFixed(2);
+      const rSlider = document.createElement('input');
+      rSlider.type='range'; rSlider.min=0.05; rSlider.max=0.9; rSlider.step=0.01; rSlider.value=P.r;
+      rSlider.addEventListener('input', e=>{ P.r = parseFloat(e.target.value); rLabel.textContent='β='+P.r.toFixed(2); updateStats(); drawBackground(); });
+      rRow.appendChild(rLabel); rRow.appendChild(rSlider);
+      mid.appendChild(rRow);
+
+      const tRow = document.createElement('div');
+      tRow.className = 'mini-slider';
+      const tLabel = document.createElement('label'); tLabel.textContent = 'θ='+Math.round(P.theta*180/Math.PI)+'°';
+      const tSlider = document.createElement('input');
+      tSlider.type='range'; tSlider.min=-180; tSlider.max=180; tSlider.step=1; tSlider.value=Math.round(P.theta*180/Math.PI);
+      tSlider.addEventListener('input', e=>{ P.theta = parseFloat(e.target.value)*Math.PI/180; tLabel.textContent='θ='+e.target.value+'°'; drawBackground(); });
+      tRow.appendChild(tLabel); tRow.appendChild(tSlider);
+      mid.appendChild(tRow);
+
+      if(useProbCb.checked){
+        const wRow = document.createElement('div');
+        wRow.className = 'mini-slider';
+        const wLabel = document.createElement('label'); wLabel.textContent = 'p='+(P.weight!==undefined?P.weight:1).toFixed(2);
+        const wSlider = document.createElement('input');
+        wSlider.type='range'; wSlider.min=0.05; wSlider.max=3; wSlider.step=0.05; wSlider.value=P.weight!==undefined?P.weight:1;
+        wSlider.addEventListener('input', e=>{ P.weight = parseFloat(e.target.value); wLabel.textContent='p='+P.weight.toFixed(2); });
+        wRow.appendChild(wLabel); wRow.appendChild(wSlider);
+        mid.appendChild(wRow);
+      }
+
+      const del = document.createElement('button');
+      del.className = 'del'; del.textContent = '×';
+      del.addEventListener('click', ()=>{ points.splice(i,1); rebuildAll(); });
+
+      row.appendChild(swatch); row.appendChild(mid); row.appendChild(del);
+      pointsTableEl.appendChild(row);
+    });
+  }
+
+  function rebuildAll(){
+    renderPointsTable();
+    updateStats();
+    drawBackground();
+  }
+
+  // ---------- mouse / touch interaction ----------
+  function hitTest(sx, sy){
+    for(let i=points.length-1;i>=0;i--){
+      const [px,py] = toCanvas(points[i].x, points[i].y);
+      if(Math.hypot(px-sx, py-sy) < 10) return i;
+    }
+    return -1;
+  }
+  function getPos(evt){
+    const rect = wrap.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    return [clientX-rect.left, clientY-rect.top];
+  }
+  wrap.addEventListener('mousedown', e=>{
+    const [sx,sy] = getPos(e);
+    const hit = hitTest(sx,sy);
+    if(hit>=0){ dragIndex = hit; }
+    else {
+      const [wx,wy] = toWorld(sx,sy);
+      points.push({x:wx, y:wy, r:0.4, theta:0, weight:1});
+      rebuildAll();
+    }
+  });
+  window.addEventListener('mousemove', e=>{
+    if(dragIndex>=0){
+      const [sx,sy] = getPos(e);
+      const [wx,wy] = toWorld(sx,sy);
+      points[dragIndex].x = wx; points[dragIndex].y = wy;
+      drawBackground(); renderPointsTable();
+    }
+  });
+  window.addEventListener('mouseup', ()=>{ dragIndex = -1; });
+
+  // ---------- presets ----------
+  function ring(n, cx, cy, radius, r0, theta0){
+    const arr = [];
+    for(let k=0;k<n;k++){
+      const ang = (k/n) * Math.PI*2;
+      arr.push({x:cx+radius*Math.cos(ang), y:cy+radius*Math.sin(ang), r:r0, theta:theta0||0, weight:1});
+    }
+    return arr;
+  }
+
+  const PRESETS = {
+    blank: ()=>[],
+    sierpinski: ()=>[
+      {x:0,y:0,r:0.5,theta:0,weight:1},
+      {x:1,y:0,r:0.5,theta:0,weight:1},
+      {x:0.5,y:0.8660254,r:0.5,theta:0,weight:1},
+    ],
+    cantorDust2: ()=>[
+      {x:0,y:0,r:1/3,theta:0,weight:1},
+      {x:1,y:1,r:1/3,theta:0,weight:1},
+    ],
+    vicsekCross: ()=>[
+      {x:0,y:0,r:1/3,theta:0,weight:1},
+      {x:1,y:0,r:1/3,theta:0,weight:1},
+      {x:1,y:1,r:1/3,theta:0,weight:1},
+      {x:0,y:1,r:1/3,theta:0,weight:1},
+      {x:0.5,y:0.5,r:1/3,theta:0,weight:1},
+    ],
+    tree20a: ()=>[
+      {x:0.5, y:-0.05, r:0.42, theta:0, weight:1},
+      {x:0.14, y:0.72, r:0.38, theta:0, weight:1},
+      {x:0.86, y:0.72, r:0.38, theta:0, weight:1},
+    ],
+    flower20b: ()=> ring(8, 0.5, 0.5, 0.32, 0.32, 0),
+    diagDust21a: ()=>[
+      {x:0,y:0,r:1/3,theta:0,weight:1},
+      {x:1,y:1,r:1/3,theta:0,weight:1},
+      {x:1,y:0.25,r:0.28,theta:0,weight:1},
+    ],
+    rotSquare21b: ()=>{
+      const diamonds = [[0.5,0],[1,0.5],[0.5,1],[0,0.5]].map(([x,y])=>({x,y,r:0.32,theta:0,weight:1}));
+      const corners = [[0,0],[1,0],[1,1],[0,1]].map(([x,y])=>({x,y,r:0.22,theta:0,weight:1}));
+      return diamonds.concat(corners);
+    },
+    fern21c: ()=>[
+      {x:0.5, y:0.08, r:0.42, theta:0, weight:1},
+      {x:0.24, y:0.62, r:0.38, theta: 27*Math.PI/180, weight:1},
+      {x:0.76, y:0.62, r:0.38, theta: -27*Math.PI/180, weight:1},
+    ],
+    crossDendritic21d: ()=>[
+      {x:0,y:0,r:1/3,theta:0,weight:1},
+      {x:1,y:0,r:1/3,theta:0,weight:1},
+      {x:1,y:1,r:1/3,theta:0,weight:1},
+      {x:0,y:1,r:1/3,theta:0,weight:1},
+      {x:0.5,y:0.5,r:1/3,theta:0,weight:1},
+    ],
+    nonFractal: ()=>[
+      {x:0,y:0,r:0.6,theta:0,weight:1},
+      {x:1,y:0,r:0.6,theta:0,weight:1},
+      {x:1,y:1,r:0.6,theta:0,weight:1},
+      {x:0,y:1,r:0.6,theta:0,weight:1},
+    ],
+    dendriticCross22a: ()=> ring(4, 0.5, 0.5, 0.30, 0.34, Math.PI/2),
+    branchingTree22b: ()=>[
+      {x:0.38, y:0.60, r:0.58, theta: 32*Math.PI/180, weight:1},
+      {x:0.62, y:0.60, r:0.58, theta: -32*Math.PI/180, weight:1},
+    ],
+  };
+
+  function loadPreset(key){
+    setRunning(false);
+    points = PRESETS[key]().map(p=>({...p}));
+    fitView();
+    clearCanvas();
+    rebuildAll();
+    if(window.matchMedia('(max-width:900px)').matches){
+      document.getElementById('canvasWrap').scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }
+
+  document.querySelectorAll('[data-preset]').forEach(btn=>{
+    btn.addEventListener('click', ()=> loadPreset(btn.dataset.preset));
+  });
+
+  runBtn.addEventListener('click', ()=> setRunning(!running));
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ points=[]; setRunning(false); fitView(); clearCanvas(); rebuildAll(); });
+  document.getElementById('clearBtn').addEventListener('click', ()=>{ clearCanvas(); });
+  document.getElementById('fitBtn').addEventListener('click', fitView);
+  speedSlider.addEventListener('input', ()=>{ speedVal.textContent = speedSlider.value+'/f'; });
+  colorByGenCb.addEventListener('change', ()=>{});
+  showSubCb.addEventListener('change', drawBackground);
+  useProbCb.addEventListener('change', renderPointsTable);
+
+  // init
+  window.addEventListener('load', ()=>{
+    resize();
+    loadPreset('sierpinski');
+  });
+  // in case load already fired
+  if(document.readyState === 'complete'){ resize(); loadPreset('sierpinski'); }
+})();
+</script>
+
+</body>
+</html>

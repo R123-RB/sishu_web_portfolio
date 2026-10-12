@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eigenvectors, eigenvalues, and diagonalization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#eef1f3; --panel:#ffffff; --ink:#17232c; --ink-soft:#4a5c68;
+    --rule:#cfd8de; --rule-soft:#e2e8ec;
+    --v1:#d8382c; --v2:#2f6fc4; --res:#2f9e5b; --warn:#a96a12; --focus:#2f6fc4;
+    --circ:#9aa7b0; --pt:#c9740f;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#101a21; --panel:#17242d; --ink:#e6edf1; --ink-soft:#9fb2be;
+      --rule:#2c3d49; --rule-soft:#22313b;
+      --v1:#ef6152; --v2:#6ba3e8; --res:#54c37f; --warn:#e0a844; --focus:#6ba3e8;
+      --circ:#5c6e79; --pt:#e0a844;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 56px}
+  header{margin-bottom:22px}
+  h1{font-family:Spectral,Georgia,serif;font-weight:600;font-size:clamp(26px,3.4vw,38px);
+     line-height:1.12;margin:0 0 8px;letter-spacing:-.01em}
+  header p{margin:0;color:var(--ink-soft);max-width:64ch}
+  .layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.9fr);gap:22px;align-items:start}
+  @media (max-width:900px){.layout{grid-template-columns:1fr}}
+
+  .stage{background:var(--panel);border:1px solid var(--rule);border-radius:3px;position:relative;overflow:hidden}
+  canvas{display:block;width:100%;touch-action:none;cursor:crosshair}
+  .hint{position:absolute;left:12px;bottom:10px;font-size:12.5px;color:var(--ink-soft);pointer-events:none}
+  .flag{position:absolute;top:10px;left:12px;right:12px;font-size:13px;font-weight:500;display:none;pointer-events:none;
+        padding:5px 8px;border-radius:2px}
+  .flag.warn{background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn)}
+  .flag.on{display:block}
+
+  .panel{background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:16px}
+  .panel + .panel{margin-top:16px}
+  h2{font-family:Spectral,Georgia,serif;font-size:17px;font-weight:600;margin:0 0 12px}
+
+  .matrixBox{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .bracket{font-size:44px;font-weight:300;color:var(--ink-soft);line-height:1;font-family:Georgia,serif}
+  .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1}
+  .mcell label{display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:2px;font-family:"IBM Plex Mono",monospace}
+  .mcell input[type=range]{width:100%;accent-color:var(--focus);margin:0}
+  .mcell .val{font-family:"IBM Plex Mono",monospace;font-size:13px;text-align:center;margin-top:2px}
+
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  .field-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+  .num{font-family:"IBM Plex Mono",monospace;font-size:14px;color:var(--ink-soft)}
+  input[type=range]{width:100%;accent-color:var(--focus);height:22px;margin:0}
+  input[type=range]:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+  button{font:inherit;font-size:13.5px;background:transparent;color:var(--ink);
+         border:1px solid var(--rule);border-radius:2px;padding:5px 9px;cursor:pointer}
+  button:hover{border-color:var(--ink-soft)}
+  button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  button.primary{border-color:var(--ink);font-weight:500}
+  button.active{background:var(--focus);color:#fff;border-color:var(--focus)}
+  .toggles{display:grid;gap:8px}
+  .toggles label{display:flex;align-items:center;gap:8px;cursor:pointer}
+  input[type=checkbox]{accent-color:var(--focus);width:15px;height:15px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td{padding:4px 0;vertical-align:top}
+  td:first-child{color:var(--ink-soft);width:46%}
+  td:last-child{font-family:"IBM Plex Mono",monospace;text-align:right}
+  .v1c{color:var(--v1)}.v2c{color:var(--v2)}.resc{color:var(--res)}.warnc{color:var(--warn)}
+  footer{margin-top:18px;color:var(--ink-soft);font-size:14px;max-width:72ch}
+  footer p{margin:0 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>The directions a matrix doesn't rotate</h1>
+  <p>Set a 2×2 matrix. Watch the unit circle deform into an ellipse, and see whether any directions survive unrotated — those are the <strong class="v1c">eigenvectors</strong>. Drag the morph slider to watch the transform happen gradually, or drag inside the picture to move the test point.</p>
+</header>
+
+<div class="layout">
+  <div>
+    <div class="stage">
+      <canvas id="plane" aria-label="Coordinate plane showing a unit circle deforming under a matrix, with eigenvector directions"></canvas>
+      <div class="flag warn" id="flagShear">Repeated eigenvalue, only one independent eigenvector — a shear. Not diagonalizable.</div>
+      <div class="flag warn" id="flagComplex">Complex eigenvalues — no real eigenvectors. Pure rotation (with scaling).</div>
+      <div class="hint">Drag inside the picture to move the test point</div>
+    </div>
+    <footer>
+      <p>The dashed grey circle is the starting shape; the solid green curve is where the matrix sends it. <span class="v1c">Red</span> and <span class="v2c">blue</span> lines are the eigenvector directions — the only rays that map onto themselves, just longer or shorter by the eigenvalue. The orange point is a test vector: drag it and watch how far off its own ray the output lands, compared to how the eigenvector rays stay put.</p>
+      <p>Move the morph slider (t) to interpolate between the identity and the full matrix — eigenvector directions stay fixed the entire time, while every other point sweeps around them. That's the geometric meaning of "eigen."</p>
+    </footer>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>Matrix A</h2>
+      <div class="matrixBox">
+        <span class="bracket">[</span>
+        <div class="mgrid">
+          <div class="mcell"><label for="ma">a₁₁</label><input type="range" id="ma" min="-3" max="3" step="0.1" value="2"><div class="val" id="maVal">2.0</div></div>
+          <div class="mcell"><label for="mb">a₁₂</label><input type="range" id="mb" min="-3" max="3" step="0.1" value="1"><div class="val" id="mbVal">1.0</div></div>
+          <div class="mcell"><label for="mc">a₂₁</label><input type="range" id="mc" min="-3" max="3" step="0.1" value="1"><div class="val" id="mcVal">1.0</div></div>
+          <div class="mcell"><label for="md">a₂₂</label><input type="range" id="md" min="-3" max="3" step="0.1" value="2"><div class="val" id="mdVal">2.0</div></div>
+        </div>
+        <span class="bracket">]</span>
+      </div>
+      <div class="row" id="presets"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Morph & test point</h2>
+      <div class="field">
+        <div class="field-head"><label for="t">t — identity → A</label><span class="num" id="tOut">1.00</span></div>
+        <input type="range" id="t" min="0" max="1" step="0.01" value="1">
+      </div>
+      <div class="row" style="margin-bottom:14px">
+        <button id="animate">▶ Animate</button>
+      </div>
+      <div class="field">
+        <div class="field-head"><label for="theta">θ — test point angle</label><span class="num" id="thetaOut">30°</span></div>
+        <input type="range" id="theta" min="0" max="360" step="1" value="30">
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Readout</h2>
+      <table>
+        <tr><td>trace(A)</td><td id="trOut">4.00</td></tr>
+        <tr><td>det(A)</td><td id="detOut">3.00</td></tr>
+        <tr><td>discriminant</td><td id="discOut">4.00</td></tr>
+        <tr><td>λ₁</td><td class="v1c" id="l1Out">3.00</td></tr>
+        <tr><td>λ₂</td><td class="v2c" id="l2Out">1.00</td></tr>
+        <tr><td>diagonalizable?</td><td id="diagOut">Yes</td></tr>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Show</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="tCircle" checked> Original circle</label>
+        <label><input type="checkbox" id="tShape" checked> Transformed shape</label>
+        <label><input type="checkbox" id="tEigen" checked> Eigenvector axes</label>
+        <label><input type="checkbox" id="tTest" checked> Test point & image</label>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var cv = document.getElementById('plane');
+  var ctx = cv.getContext('2d');
+
+  var S = { a:2,b:1,c:1,d:2, t:1, theta:30,
+            showCircle:true, showShape:true, showEigen:true, showTest:true, anim:false };
+
+  var VIEW = 6, scale = 40, ox = 0, oy = 0, W = 0, H = 0;
+
+  function palette(){
+    var cs = getComputedStyle(document.documentElement);
+    function g(n){ return cs.getPropertyValue(n).trim(); }
+    return { ink:g('--ink'), soft:g('--ink-soft'), rule:g('--rule'), ruleSoft:g('--rule-soft'),
+             v1:g('--v1'), v2:g('--v2'), res:g('--res'), panel:g('--panel'), circ:g('--circ'), pt:g('--pt') };
+  }
+  var P = palette();
+  if(window.matchMedia){
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if(mq.addEventListener) mq.addEventListener('change', function(){ P = palette(); draw(); });
+  }
+
+  function sx(x){ return ox + x*scale; }
+  function sy(y){ return oy - y*scale; }
+  function wx(p){ return (p - ox)/scale; }
+  function wy(p){ return (oy - p)/scale; }
+  function fmt(v){ var s = (Math.abs(v) < 5e-3 ? 0 : v).toFixed(2); return s === "-0.00" ? "0.00" : s; }
+  function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  // Current interpolated matrix M(t) = (1-t) I + t A
+  function Mnow(){
+    var t = S.t;
+    return { m11: (1-t) + t*S.a, m12: t*S.b, m21: t*S.c, m22: (1-t) + t*S.d };
+  }
+  function apply(M, p){ return { x: M.m11*p.x + M.m12*p.y, y: M.m21*p.x + M.m22*p.y }; }
+
+  function nullvec(m11,m12,m21,m22){
+    var eps = 1e-6;
+    if(Math.abs(m11) > eps || Math.abs(m12) > eps){
+      var v = { x:-m12, y:m11 };
+      var len = Math.hypot(v.x,v.y); if(len<eps) return {x:1,y:0};
+      return { x:v.x/len, y:v.y/len };
+    }
+    if(Math.abs(m21) > eps || Math.abs(m22) > eps){
+      var v2 = { x:-m22, y:m21 };
+      var len2 = Math.hypot(v2.x,v2.y); if(len2<eps) return {x:1,y:0};
+      return { x:v2.x/len2, y:v2.y/len2 };
+    }
+    return { x:1, y:0 };
+  }
+
+  function eigenInfo(){
+    var a=S.a,b=S.b,c=S.c,d=S.d;
+    var tr = a+d, det = a*d - b*c, disc = tr*tr - 4*det;
+    var res = { trace:tr, det:det, disc:disc, kind:null, l1:null, l2:null, v1:null, v2:null, re:null, im:null, diagonalizable:false };
+    var EPS = 1e-4;
+    if(disc > EPS){
+      var s = Math.sqrt(disc);
+      var l1 = (tr+s)/2, l2 = (tr-s)/2;
+      res.kind = 'distinct';
+      res.l1 = l1; res.l2 = l2;
+      res.v1 = nullvec(a-l1, b, c, d-l1);
+      res.v2 = nullvec(a-l2, b, c, d-l2);
+      res.diagonalizable = true;
+    } else if(disc >= -EPS){
+      var l = tr/2;
+      res.kind = 'repeated';
+      res.l1 = l; res.l2 = l;
+      var m11=a-l, m12=b, m21=c, m22=d-l;
+      var allZero = Math.abs(m11)<EPS && Math.abs(m12)<EPS && Math.abs(m21)<EPS && Math.abs(m22)<EPS;
+      if(allZero){
+        res.diagonalizable = true; // scalar matrix, every direction eigen
+        res.v1 = {x:1,y:0}; res.v2 = {x:0,y:1};
+        res.scalar = true;
+      } else {
+        res.diagonalizable = false;
+        res.v1 = nullvec(m11,m12,m21,m22);
+        res.v2 = null;
+      }
+    } else {
+      res.kind = 'complex';
+      res.re = tr/2; res.im = Math.sqrt(-disc)/2;
+      res.diagonalizable = false;
+    }
+    return res;
+  }
+
+  function resize(){
+    var rect = cv.parentNode.getBoundingClientRect();
+    W = Math.max(280, rect.width);
+    H = Math.max(300, Math.min(W*0.82, 560));
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+    cv.style.height = H + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale = Math.min(W,H)/(2*VIEW);
+    ox = W/2; oy = H/2;
+    draw();
+  }
+  if(window.ResizeObserver) new ResizeObserver(resize).observe(cv.parentNode);
+
+  function drawGrid(){
+    ctx.fillStyle=P.panel; ctx.fillRect(0,0,W,H);
+    var lo=Math.ceil(wx(0)), hi=Math.floor(wx(W)), bo=Math.ceil(wy(H)), to=Math.floor(wy(0));
+    ctx.lineWidth=1; ctx.strokeStyle=P.ruleSoft; ctx.beginPath();
+    for(var x=lo;x<=hi;x++){ ctx.moveTo(Math.round(sx(x))+0.5,0); ctx.lineTo(Math.round(sx(x))+0.5,H); }
+    for(var y=bo;y<=to;y++){ ctx.moveTo(0,Math.round(sy(y))+0.5); ctx.lineTo(W,Math.round(sy(y))+0.5); }
+    ctx.stroke();
+    ctx.strokeStyle=P.rule; ctx.lineWidth=1.4; ctx.beginPath();
+    ctx.moveTo(0,Math.round(sy(0))+0.5); ctx.lineTo(W,Math.round(sy(0))+0.5);
+    ctx.moveTo(Math.round(sx(0))+0.5,0); ctx.lineTo(Math.round(sx(0))+0.5,H);
+    ctx.stroke();
+  }
+
+  function circlePoints(n){
+    var pts = [];
+    for(var i=0;i<=n;i++){
+      var th = i/n*2*Math.PI;
+      pts.push({ x:Math.cos(th), y:Math.sin(th) });
+    }
+    return pts;
+  }
+  var basePts = circlePoints(120);
+
+  function drawPath(pts, color, width, dashed){
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = width;
+    if(dashed) ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    for(var i=0;i<pts.length;i++){
+      var x = sx(pts[i].x), y = sy(pts[i].y);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function fullLine(dir, color, width){
+    var L = VIEW*1.6;
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(sx(-dir.x*L), sy(-dir.y*L));
+    ctx.lineTo(sx(dir.x*L), sy(dir.y*L));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function arrow(from,to,color,width){
+    var x1=sx(from.x), y1=sy(from.y), x2=sx(to.x), y2=sy(to.y);
+    var dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=width; ctx.lineCap='round';
+    if(len < 2){ ctx.beginPath(); ctx.arc(x1,y1,width,0,6.2832); ctx.fill(); return; }
+    var head = Math.min(11, len*0.42), ux=dx/len, uy=dy/len;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2-ux*head*0.8,y2-uy*head*0.8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-ux*head-uy*head*0.38, y2-uy*head+ux*head*0.38);
+    ctx.lineTo(x2-ux*head+uy*head*0.38, y2-uy*head-ux*head*0.38);
+    ctx.closePath(); ctx.fill();
+  }
+  function dot(p,color,r){ ctx.beginPath(); ctx.arc(sx(p.x),sy(p.y),r,0,6.2832); ctx.fillStyle=color; ctx.fill(); }
+  function label(text,p,color,dx,dy){
+    ctx.font='500 13.5px "IBM Plex Sans", system-ui, sans-serif';
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    var x=sx(p.x)+dx, y=sy(p.y)+dy;
+    ctx.lineWidth=3.5; ctx.strokeStyle=P.panel; ctx.strokeText(text,x,y);
+    ctx.fillStyle=color; ctx.fillText(text,x,y);
+  }
+
+  var eig = null;
+
+  function draw(){
+    drawGrid();
+    var M = Mnow();
+
+    if(S.showCircle) drawPath(basePts, P.circ, 1.6, true);
+
+    if(S.showShape){
+      var out = basePts.map(function(p){ return apply(M,p); });
+      drawPath(out, P.res, 2.4, false);
+    }
+
+    if(S.showEigen && eig){
+      if(eig.kind === 'distinct'){
+        fullLine(eig.v1, P.v1, 2);
+        fullLine(eig.v2, P.v2, 2);
+        var e1 = { x:eig.v1.x*eig.l1, y:eig.v1.y*eig.l1 };
+        var e2 = { x:eig.v2.x*eig.l2, y:eig.v2.y*eig.l2 };
+        dot(e1, P.v1, 5); dot(e2, P.v2, 5);
+        label('λ₁='+fmt(eig.l1), e1, P.v1, 9, -10);
+        label('λ₂='+fmt(eig.l2), e2, P.v2, 9, -10);
+      } else if(eig.kind === 'repeated'){
+        if(eig.scalar){
+          ctx.save(); ctx.globalAlpha=0.12; ctx.fillStyle=P.v1;
+          ctx.beginPath(); ctx.arc(sx(0),sy(0), Math.abs(eig.l1)*scale, 0, 6.2832); ctx.fill(); ctx.restore();
+          label('every direction is an eigenvector (λ='+fmt(eig.l1)+')', {x:0,y:0}, P.v1, 10, -18);
+        } else {
+          fullLine(eig.v1, P.v1, 2.4);
+          var ee = { x:eig.v1.x*eig.l1, y:eig.v1.y*eig.l1 };
+          dot(ee, P.v1, 5);
+          label('λ='+fmt(eig.l1)+' (only direction)', ee, P.v1, 9, -10);
+        }
+      }
+      // complex: draw nothing, flag handles messaging
+    }
+
+    if(S.showTest){
+      var th = S.theta*Math.PI/180;
+      var p0 = { x:Math.cos(th), y:Math.sin(th) };
+      var p1 = apply(M, p0);
+      ctx.save(); ctx.globalAlpha=0.5; ctx.setLineDash([3,3]);
+      ctx.strokeStyle = P.pt; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(sx(0),sy(0)); ctx.lineTo(sx(p0.x*3.2),sy(p0.y*3.2)); ctx.stroke();
+      ctx.restore();
+      dot(p0, P.pt, 4.5);
+      arrow({x:0,y:0}, p1, P.pt, 2.6);
+      dot(p1, P.pt, 5.5);
+      label('image', p1, P.pt, 9, -10);
+    }
+
+    dot({x:0,y:0}, P.ink, 3.2);
+  }
+
+  /* ---------- controls ---------- */
+  var maEl=document.getElementById('ma'), mbEl=document.getElementById('mb'),
+      mcEl=document.getElementById('mc'), mdEl=document.getElementById('md');
+  var maVal=document.getElementById('maVal'), mbVal=document.getElementById('mbVal'),
+      mcVal=document.getElementById('mcVal'), mdVal=document.getElementById('mdVal');
+  var tEl=document.getElementById('t'), tOut=document.getElementById('tOut');
+  var thetaEl=document.getElementById('theta'), thetaOut=document.getElementById('thetaOut');
+
+  function readMatrix(){
+    S.a=parseFloat(maEl.value); S.b=parseFloat(mbEl.value);
+    S.c=parseFloat(mcEl.value); S.d=parseFloat(mdEl.value);
+    maVal.textContent=fmt(S.a); mbVal.textContent=fmt(S.b);
+    mcVal.textContent=fmt(S.c); mdVal.textContent=fmt(S.d);
+    sync();
+  }
+  [maEl,mbEl,mcEl,mdEl].forEach(function(el){ el.addEventListener('input', readMatrix); });
+
+  tEl.addEventListener('input', function(){ S.t=parseFloat(tEl.value); tOut.textContent=fmt(S.t); draw(); });
+  thetaEl.addEventListener('input', function(){ S.theta=parseFloat(thetaEl.value); thetaOut.textContent=Math.round(S.theta)+'°'; draw(); });
+
+  function setMatrix(a,b,c,d){
+    maEl.value=a; mbEl.value=b; mcEl.value=c; mdEl.value=d;
+    readMatrix();
+  }
+
+  var presets = [
+    ['Symmetric stretch', 2,1,1,2],
+    ['Diagonal scale', 2,0,0,0.5],
+    ['Shear', 1,1,0,1],
+    ['Rotation 90°', 0,-1,1,0],
+    ['Spiral (complex)', 1,-1,1,1],
+    ['Identity', 1,0,0,1]
+  ];
+  var pw = document.getElementById('presets');
+  presets.forEach(function(p){
+    var btn = document.createElement('button');
+    btn.textContent = p[0];
+    btn.addEventListener('click', function(){ setMatrix(p[1],p[2],p[3],p[4]); });
+    pw.appendChild(btn);
+  });
+
+  document.getElementById('tCircle').addEventListener('change', function(e){ S.showCircle=e.target.checked; draw(); });
+  document.getElementById('tShape').addEventListener('change', function(e){ S.showShape=e.target.checked; draw(); });
+  document.getElementById('tEigen').addEventListener('change', function(e){ S.showEigen=e.target.checked; draw(); });
+  document.getElementById('tTest').addEventListener('change', function(e){ S.showTest=e.target.checked; draw(); });
+
+  var animBtn = document.getElementById('animate');
+  var animFrame = null, animDir = 1;
+  animBtn.addEventListener('click', function(){
+    S.anim = !S.anim;
+    animBtn.textContent = S.anim ? '■ Stop' : '▶ Animate';
+    animBtn.classList.toggle('active', S.anim);
+    if(S.anim) animLoop();
+    else if(animFrame) cancelAnimationFrame(animFrame);
+  });
+  function animLoop(){
+    if(!S.anim) return;
+    S.t += animDir*0.008;
+    if(S.t >= 1){ S.t = 1; animDir = -1; }
+    if(S.t <= 0){ S.t = 0; animDir = 1; }
+    tEl.value = S.t; tOut.textContent = fmt(S.t);
+    draw();
+    animFrame = requestAnimationFrame(animLoop);
+  }
+
+  /* ---------- pointer drag on canvas moves the test point ---------- */
+  var dragging = false;
+  function localPt(e){ var r=cv.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+  cv.addEventListener('pointerdown', function(e){
+    dragging = true; cv.setPointerCapture(e.pointerId);
+    setThetaFromEvent(e);
+  });
+  cv.addEventListener('pointermove', function(e){
+    if(dragging) setThetaFromEvent(e);
+  });
+  cv.addEventListener('pointerup', function(){ dragging = false; });
+  cv.addEventListener('pointercancel', function(){ dragging = false; });
+  function setThetaFromEvent(e){
+    var m = localPt(e);
+    var wxp = wx(m.x), wyp = wy(m.y);
+    var th = Math.atan2(wyp, wxp) * 180/Math.PI;
+    if(th < 0) th += 360;
+    S.theta = th;
+    thetaEl.value = th.toFixed(0);
+    thetaOut.textContent = Math.round(th)+'°';
+    draw();
+  }
+
+  /* ---------- readouts ---------- */
+  var flagShear = document.getElementById('flagShear');
+  var flagComplex = document.getElementById('flagComplex');
+
+  function sync(){
+    eig = eigenInfo();
+    document.getElementById('trOut').textContent = fmt(eig.trace);
+    document.getElementById('detOut').textContent = fmt(eig.det);
+    document.getElementById('discOut').textContent = fmt(eig.disc);
+
+    var l1El = document.getElementById('l1Out'), l2El = document.getElementById('l2Out');
+    var diagEl = document.getElementById('diagOut');
+
+    if(eig.kind === 'distinct'){
+      l1El.textContent = fmt(eig.l1);
+      l2El.textContent = fmt(eig.l2);
+      diagEl.textContent = 'Yes';
+      flagShear.classList.remove('on'); flagComplex.classList.remove('on');
+    } else if(eig.kind === 'repeated'){
+      l1El.textContent = fmt(eig.l1)+' (×2)';
+      l2El.textContent = '—';
+      diagEl.textContent = eig.diagonalizable ? 'Yes (scalar matrix)' : 'No — defective';
+      flagShear.classList.toggle('on', !eig.diagonalizable);
+      flagComplex.classList.remove('on');
+    } else {
+      l1El.textContent = fmt(eig.re)+' + '+fmt(eig.im)+'i';
+      l2El.textContent = fmt(eig.re)+' − '+fmt(eig.im)+'i';
+      diagEl.textContent = 'No — complex';
+      flagComplex.classList.add('on');
+      flagShear.classList.remove('on');
+    }
+    draw();
+  }
+
+  window.addEventListener('resize', resize);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  readMatrix();
+  resize();
+})();
+</script>
+</body>
+</html>

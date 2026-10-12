@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear combinations of two vectors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#eef1f3;
+    --panel:#ffffff;
+    --ink:#17232c;
+    --ink-soft:#4a5c68;
+    --rule:#cfd8de;
+    --rule-soft:#e2e8ec;
+    --v1:#d8382c;
+    --v2:#2f6fc4;
+    --res:#2f9e5b;
+    --warn:#a96a12;
+    --focus:#2f6fc4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#101a21; --panel:#17242d; --ink:#e6edf1; --ink-soft:#9fb2be;
+      --rule:#2c3d49; --rule-soft:#22313b;
+      --v1:#ef6152; --v2:#6ba3e8; --res:#54c37f; --warn:#e0a844; --focus:#6ba3e8;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1160px;margin:0 auto;padding:28px 20px 56px}
+  header{margin-bottom:22px}
+  h1{font-family:Spectral,Georgia,serif;font-weight:600;font-size:clamp(26px,3.4vw,38px);
+     line-height:1.12;margin:0 0 8px;letter-spacing:-.01em}
+  header p{margin:0;color:var(--ink-soft);max-width:62ch}
+  .layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.85fr);gap:22px;align-items:start}
+  @media (max-width:880px){.layout{grid-template-columns:1fr}}
+
+  .stage{background:var(--panel);border:1px solid var(--rule);border-radius:3px;position:relative;overflow:hidden}
+  canvas{display:block;width:100%;touch-action:none;cursor:crosshair}
+  .hint{position:absolute;left:12px;bottom:10px;font-size:12.5px;color:var(--ink-soft);pointer-events:none}
+  .flag{position:absolute;top:10px;left:12px;right:12px;font-size:13px;color:var(--warn);display:none;pointer-events:none}
+  .flag.on{display:block}
+
+  .panel{background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:16px}
+  .panel + .panel{margin-top:16px}
+  h2{font-family:Spectral,Georgia,serif;font-size:17px;font-weight:600;margin:0 0 12px}
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  .field-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+  .num{font-family:"IBM Plex Mono",monospace;font-size:14px;color:var(--ink-soft)}
+  input[type=range]{width:100%;accent-color:var(--focus);height:22px;margin:0}
+  input[type=range]:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+  .row{display:flex;flex-wrap:wrap;gap:6px}
+  button{font:inherit;font-size:13.5px;background:transparent;color:var(--ink);
+         border:1px solid var(--rule);border-radius:2px;padding:5px 9px;cursor:pointer}
+  button:hover{border-color:var(--ink-soft)}
+  button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  button.primary{border-color:var(--ink);font-weight:500}
+  .toggles{display:grid;gap:8px}
+  .toggles label{display:flex;align-items:center;gap:8px;cursor:pointer}
+  input[type=checkbox]{accent-color:var(--focus);width:15px;height:15px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td{padding:4px 0}
+  td:first-child{color:var(--ink-soft);width:52%}
+  td:last-child{font-family:"IBM Plex Mono",monospace;text-align:right}
+  .v1c{color:var(--v1)}.v2c{color:var(--v2)}.resc{color:var(--res)}
+  .kept{list-style:none;margin:10px 0 0;padding:0;font-size:13px;max-height:130px;overflow:auto}
+  .kept li{display:flex;justify-content:space-between;gap:8px;padding:3px 0;
+           border-top:1px solid var(--rule-soft);font-family:"IBM Plex Mono",monospace}
+  .kept li:first-child{border-top:0}
+  .empty{color:var(--ink-soft);font-size:13.5px;margin:10px 0 0}
+  footer{margin-top:18px;color:var(--ink-soft);font-size:14px;max-width:70ch}
+  footer p{margin:0 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Every point is a recipe</h1>
+  <p>Choose how much <strong class="v1c">v₁</strong> and how much <strong class="v2c">v₂</strong> to use, and see where you land. Drag either arrow tip to change the vectors themselves, or drag the <strong class="resc">result</strong> anywhere on the plane to read off the recipe that reaches it.</p>
+</header>
+
+<div class="layout">
+  <div>
+    <div class="stage">
+      <canvas id="plane" aria-label="Coordinate plane with two draggable vectors and their linear combination"></canvas>
+      <div class="flag" id="flag">v₁ and v₂ now lie along one line — most of the plane is out of reach.</div>
+      <div class="hint">Drag the arrow tips, or drag the green point</div>
+    </div>
+    <footer>
+      <p>The dashed lines are the parallelogram law from the figure: go <span class="v1c">a·v₁</span>, then <span class="v2c">b·v₂</span>, and you arrive at <span class="resc">a·v₁ + b·v₂</span>. Swapping the order traces the other two sides, which is why the shape closes.</p>
+      <p>While the two vectors point in different directions, every point in the plane has exactly one recipe. Line them up and the recipes collapse onto a single line.</p>
+    </footer>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>Amounts</h2>
+      <div class="field">
+        <div class="field-head">
+          <label for="a">a — how much <span class="v1c">v₁</span></label>
+          <span class="num" id="aOut">1.00</span>
+        </div>
+        <input type="range" id="a" min="-3" max="3" step="0.01" value="1">
+      </div>
+      <div class="field">
+        <div class="field-head">
+          <label for="b">b — how much <span class="v2c">v₂</span></label>
+          <span class="num" id="bOut">1.00</span>
+        </div>
+        <input type="range" id="b" min="-3" max="3" step="0.01" value="1">
+      </div>
+      <div class="field">
+        <div class="row" id="presets"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Readout</h2>
+      <table>
+        <tr><td>v₁</td><td class="v1c" id="v1Out">(1, 2)</td></tr>
+        <tr><td>v₂</td><td class="v2c" id="v2Out">(1, 0)</td></tr>
+        <tr><td>a·v₁ + b·v₂</td><td class="resc" id="resOut">(2, 2)</td></tr>
+        <tr><td>Parallelogram area</td><td id="detOut">2.00</td></tr>
+      </table>
+      <div class="row" style="margin-top:12px">
+        <button id="reset">Reset vectors</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Show</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="tPara" checked> Parallelogram construction</label>
+        <label><input type="checkbox" id="tLattice"> Whole-number combinations</label>
+        <label><input type="checkbox" id="tSpan"> Reachable region</label>
+        <label><input type="checkbox" id="tSnap" checked> Snap to neat values</label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Kept points</h2>
+      <div class="row">
+        <button class="primary" id="keep">Keep this point</button>
+        <button id="clear">Clear</button>
+      </div>
+      <p class="empty" id="keptEmpty">Nothing kept yet. Keep a few and compare their recipes.</p>
+      <ul class="kept" id="keptList"></ul>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var cv = document.getElementById('plane');
+  var ctx = cv.getContext('2d');
+
+  var S = { v1:{x:1,y:2}, v2:{x:1,y:0}, a:1, b:1,
+            para:true, lattice:false, span:false, snap:true, kept:[] };
+
+  var VIEW = 5.6, scale = 40, ox = 0, oy = 0, W = 0, H = 0;
+
+  function palette(){
+    var cs = getComputedStyle(document.documentElement);
+    function g(n){ return cs.getPropertyValue(n).trim(); }
+    return { ink:g('--ink'), soft:g('--ink-soft'), rule:g('--rule'), ruleSoft:g('--rule-soft'),
+             v1:g('--v1'), v2:g('--v2'), res:g('--res'), panel:g('--panel') };
+  }
+  var P = palette();
+  if(window.matchMedia){
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if(mq.addEventListener) mq.addEventListener('change', function(){ P = palette(); draw(); });
+  }
+
+  function det(){ return S.v1.x*S.v2.y - S.v2.x*S.v1.y; }
+  function result(){ return { x:S.a*S.v1.x + S.b*S.v2.x, y:S.a*S.v1.y + S.b*S.v2.y }; }
+  function sx(x){ return ox + x*scale; }
+  function sy(y){ return oy - y*scale; }
+  function wx(p){ return (p - ox)/scale; }
+  function wy(p){ return (oy - p)/scale; }
+  function snapTo(v,s){ return Math.round(v/s)*s; }
+  function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+  function fmt(v){ var s = (Math.abs(v) < 5e-3 ? 0 : v).toFixed(2); return s === "-0.00" ? "0.00" : s; }
+
+  function resize(){
+    var rect = cv.parentNode.getBoundingClientRect();
+    W = Math.max(280, rect.width);
+    H = Math.max(300, Math.min(W*0.82, 560));
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+    cv.style.height = H + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale = Math.min(W,H)/(2*VIEW);
+    ox = W/2; oy = H/2;
+    draw();
+  }
+  if(window.ResizeObserver) new ResizeObserver(resize).observe(cv.parentNode);
+
+  function arrow(from,to,color,width){
+    var x1=sx(from.x), y1=sy(from.y), x2=sx(to.x), y2=sy(to.y);
+    var dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=width; ctx.lineCap='round';
+    if(len < 2){ ctx.beginPath(); ctx.arc(x1,y1,width,0,6.2832); ctx.fill(); return; }
+    var head = Math.min(11, len*0.42), ux = dx/len, uy = dy/len;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2-ux*head*0.8, y2-uy*head*0.8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-ux*head-uy*head*0.38, y2-uy*head+ux*head*0.38);
+    ctx.lineTo(x2-ux*head+uy*head*0.38, y2-uy*head-ux*head*0.38);
+    ctx.closePath(); ctx.fill();
+  }
+  function dot(p,color,r){ ctx.beginPath(); ctx.arc(sx(p.x),sy(p.y),r,0,6.2832); ctx.fillStyle=color; ctx.fill(); }
+  function label(text,p,color,dx,dy){
+    ctx.font='500 14px "IBM Plex Sans", system-ui, sans-serif';
+    ctx.textAlign='left'; ctx.textBaseline='middle';
+    var x=sx(p.x)+dx, y=sy(p.y)+dy;
+    ctx.lineWidth=3.5; ctx.strokeStyle=P.panel; ctx.strokeText(text,x,y);
+    ctx.fillStyle=color; ctx.fillText(text,x,y);
+  }
+
+  function drawGrid(){
+    ctx.fillStyle=P.panel; ctx.fillRect(0,0,W,H);
+    var lo=Math.ceil(wx(0)), hi=Math.floor(wx(W)), bo=Math.ceil(wy(H)), to=Math.floor(wy(0));
+    ctx.lineWidth=1; ctx.strokeStyle=P.ruleSoft; ctx.beginPath();
+    for(var x=lo;x<=hi;x++){ ctx.moveTo(Math.round(sx(x))+0.5,0); ctx.lineTo(Math.round(sx(x))+0.5,H); }
+    for(var y=bo;y<=to;y++){ ctx.moveTo(0,Math.round(sy(y))+0.5); ctx.lineTo(W,Math.round(sy(y))+0.5); }
+    ctx.stroke();
+    ctx.strokeStyle=P.rule; ctx.lineWidth=1.4; ctx.beginPath();
+    ctx.moveTo(0,Math.round(sy(0))+0.5); ctx.lineTo(W,Math.round(sy(0))+0.5);
+    ctx.moveTo(Math.round(sx(0))+0.5,0); ctx.lineTo(Math.round(sx(0))+0.5,H);
+    ctx.stroke();
+  }
+
+  function drawSpan(){
+    var d = det();
+    ctx.save();
+    if(Math.abs(d) > 1e-4){
+      ctx.globalAlpha=0.07; ctx.fillStyle=P.res; ctx.fillRect(0,0,W,H);
+    } else {
+      var v = Math.hypot(S.v1.x,S.v1.y) > 1e-9 ? S.v1 : (Math.hypot(S.v2.x,S.v2.y) > 1e-9 ? S.v2 : null);
+      ctx.globalAlpha=0.45; ctx.strokeStyle=P.res; ctx.fillStyle=P.res; ctx.lineWidth=8;
+      if(v){
+        ctx.beginPath(); ctx.moveTo(sx(-v.x*40),sy(-v.y*40)); ctx.lineTo(sx(v.x*40),sy(v.y*40)); ctx.stroke();
+      } else { ctx.beginPath(); ctx.arc(sx(0),sy(0),8,0,6.2832); ctx.fill(); }
+    }
+    ctx.restore();
+  }
+
+  function drawLattice(){
+    ctx.save(); ctx.globalAlpha=0.55;
+    for(var i=-6;i<=6;i++) for(var j=-6;j<=6;j++){
+      var p = { x:i*S.v1.x + j*S.v2.x, y:i*S.v1.y + j*S.v2.y };
+      if(Math.abs(p.x) > VIEW+1 || Math.abs(p.y) > VIEW+1) continue;
+      dot(p, P.soft, 1.9);
+    }
+    ctx.restore();
+  }
+
+  function drawPara(){
+    var A={x:S.a*S.v1.x,y:S.a*S.v1.y}, B={x:S.b*S.v2.x,y:S.b*S.v2.y}, R=result();
+    ctx.save(); ctx.setLineDash([5,5]); ctx.lineWidth=1.4; ctx.globalAlpha=0.9;
+    ctx.strokeStyle=P.v2; ctx.beginPath(); ctx.moveTo(sx(A.x),sy(A.y)); ctx.lineTo(sx(R.x),sy(R.y)); ctx.stroke();
+    ctx.strokeStyle=P.v1; ctx.beginPath(); ctx.moveTo(sx(B.x),sy(B.y)); ctx.lineTo(sx(R.x),sy(R.y)); ctx.stroke();
+    ctx.restore();
+    if(Math.abs(S.a) > 1e-6){ arrow({x:0,y:0},A,P.v1,2.2); ctx.save(); ctx.globalAlpha=0.6; dot(A,P.v1,3.2); ctx.restore(); }
+    if(Math.abs(S.b) > 1e-6){ arrow({x:0,y:0},B,P.v2,2.2); ctx.save(); ctx.globalAlpha=0.6; dot(B,P.v2,3.2); ctx.restore(); }
+  }
+
+  function draw(){
+    drawGrid();
+    if(S.span) drawSpan();
+    if(S.lattice) drawLattice();
+    if(S.para) drawPara();
+
+    ctx.save(); ctx.globalAlpha=0.45;
+    arrow({x:0,y:0},S.v1,P.v1,3);
+    arrow({x:0,y:0},S.v2,P.v2,3);
+    ctx.restore();
+    dot(S.v1,P.v1,5.5); dot(S.v2,P.v2,5.5);
+    label('v₁',S.v1,P.v1,9,-10);
+    label('v₂',S.v2,P.v2,9,-10);
+
+    ctx.save(); ctx.globalAlpha=0.7;
+    for(var i=0;i<S.kept.length;i++) dot(S.kept[i],P.soft,4);
+    ctx.restore();
+
+    var R=result();
+    ctx.save(); ctx.globalAlpha=0.16; ctx.fillStyle=P.res;
+    ctx.beginPath(); ctx.arc(sx(R.x),sy(R.y),12,0,6.2832); ctx.fill(); ctx.restore();
+    dot(R,P.res,6.5);
+    label(fmt(S.a)+'·v₁ + '+fmt(S.b)+'·v₂', R, P.res, 14, -14);
+    dot({x:0,y:0},P.ink,3.5);
+  }
+
+  var drag=null;
+  function localPt(e){ var r=cv.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+  function near(p,m){ return Math.hypot(sx(p.x)-m.x, sy(p.y)-m.y) < 20; }
+
+  cv.addEventListener('pointerdown', function(e){
+    var m = localPt(e);
+    drag = near(S.v1,m) ? 'v1' : near(S.v2,m) ? 'v2' : 'res';
+    cv.setPointerCapture(e.pointerId);
+    moveTo(m); e.preventDefault();
+  });
+  cv.addEventListener('pointermove', function(e){
+    var m = localPt(e);
+    if(drag){ moveTo(m); return; }
+    cv.style.cursor = (near(S.v1,m)||near(S.v2,m)||near(result(),m)) ? 'grab' : 'crosshair';
+  });
+  cv.addEventListener('pointerup', function(){ drag=null; });
+  cv.addEventListener('pointercancel', function(){ drag=null; });
+
+  function moveTo(m){
+    var p = { x:wx(m.x), y:wy(m.y) };
+    if(drag === 'v1' || drag === 'v2'){
+      if(S.snap){ p.x = snapTo(p.x,0.5); p.y = snapTo(p.y,0.5); }
+      S[drag] = p;
+    } else {
+      var d = det();
+      if(Math.abs(d) > 1e-6){
+        var a = (p.x*S.v2.y - p.y*S.v2.x)/d;
+        var b = (S.v1.x*p.y - S.v1.y*p.x)/d;
+        if(S.snap){ a = snapTo(a,0.25); b = snapTo(b,0.25); }
+        S.a = clamp(a,-3,3); S.b = clamp(b,-3,3);
+      } else {
+        var v = Math.hypot(S.v1.x,S.v1.y) > 1e-9 ? S.v1 : null;
+        if(v){
+          var t = (p.x*v.x + p.y*v.y)/(v.x*v.x + v.y*v.y);
+          if(S.snap) t = snapTo(t,0.25);
+          S.a = clamp(t,-3,3); S.b = 0;
+        }
+      }
+      aEl.value = S.a; bEl.value = S.b;
+    }
+    sync();
+  }
+
+  var aEl = document.getElementById('a'), bEl = document.getElementById('b');
+  aEl.addEventListener('input', function(){ S.a = parseFloat(aEl.value); sync(); });
+  bEl.addEventListener('input', function(){ S.b = parseFloat(bEl.value); sync(); });
+
+  var presets = [['v₁ + v₂',1,1],['v₁ − v₂',1,-1],['2v₁ + 0v₂',2,0],['0v₁ + 2v₂',0,2],['−v₁',-1,0],['origin',0,0]];
+  var pw = document.getElementById('presets');
+  presets.forEach(function(p){
+    var btn = document.createElement('button');
+    btn.textContent = p[0];
+    btn.addEventListener('click', function(){
+      S.a = p[1]; S.b = p[2]; aEl.value = S.a; bEl.value = S.b; sync();
+    });
+    pw.appendChild(btn);
+  });
+
+  document.getElementById('tPara').addEventListener('change', function(e){ S.para = e.target.checked; draw(); });
+  document.getElementById('tLattice').addEventListener('change', function(e){ S.lattice = e.target.checked; draw(); });
+  document.getElementById('tSpan').addEventListener('change', function(e){ S.span = e.target.checked; draw(); });
+  document.getElementById('tSnap').addEventListener('change', function(e){ S.snap = e.target.checked; });
+  document.getElementById('reset').addEventListener('click', function(){
+    S.v1 = {x:1,y:2}; S.v2 = {x:1,y:0}; S.a = 1; S.b = 1;
+    aEl.value = 1; bEl.value = 1; sync();
+  });
+
+  var keptList = document.getElementById('keptList'), keptEmpty = document.getElementById('keptEmpty');
+  document.getElementById('keep').addEventListener('click', function(){
+    var R = result(); R.a = S.a; R.b = S.b; S.kept.push(R); renderKept(); draw();
+  });
+  document.getElementById('clear').addEventListener('click', function(){ S.kept = []; renderKept(); draw(); });
+  function renderKept(){
+    keptList.innerHTML = '';
+    keptEmpty.style.display = S.kept.length ? 'none' : 'block';
+    S.kept.forEach(function(k){
+      var li = document.createElement('li');
+      var l = document.createElement('span'); l.textContent = fmt(k.a)+'·v₁ + '+fmt(k.b)+'·v₂';
+      var r = document.createElement('span'); r.textContent = '('+fmt(k.x)+', '+fmt(k.y)+')';
+      li.appendChild(l); li.appendChild(r); keptList.appendChild(li);
+    });
+  }
+
+  var flag = document.getElementById('flag');
+  function sync(){
+    document.getElementById('aOut').textContent = fmt(S.a);
+    document.getElementById('bOut').textContent = fmt(S.b);
+    document.getElementById('v1Out').textContent = '('+fmt(S.v1.x)+', '+fmt(S.v1.y)+')';
+    document.getElementById('v2Out').textContent = '('+fmt(S.v2.x)+', '+fmt(S.v2.y)+')';
+    var R = result();
+    document.getElementById('resOut').textContent = '('+fmt(R.x)+', '+fmt(R.y)+')';
+    var d = det();
+    document.getElementById('detOut').textContent = fmt(Math.abs(d));
+    flag.className = Math.abs(d) < 1e-4 ? 'flag on' : 'flag';
+    draw();
+  }
+
+  window.addEventListener('resize', resize);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  renderKept();
+  resize();
+  sync();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Period-Tripling: the merging 3-cycle of G_λ(z) = λz + z²</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1c2438; --ink:#e8ecf5; --muted:#8a94ad;
+    --accent:#e0483c; --accent2:#4fb0e0; --good:#59c98a; --gold:#d8b25c; --gray:#6b7690; --border:#2a3350;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; padding:22px; background:var(--bg); color:var(--ink); font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;}
+  h1{font-size:1.18rem; font-weight:600; margin:0 0 4px 0;}
+  .sub{color:var(--muted); font-size:.87rem; margin-bottom:15px; max-width:880px; line-height:1.5;}
+  .layout{display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;}
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px;}
+  canvas{border-radius:6px; display:block; background:#0c111d;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center;}
+  button{background:var(--panel2); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:6px 11px; font-size:.77rem; cursor:pointer; font-family:inherit;}
+  button:hover{border-color:var(--accent2);}
+  button.special{border-color:var(--gold); color:var(--gold);}
+  input[type=range]{width:280px;}
+  .readout{font-size:.78rem; color:var(--muted); margin-top:10px; line-height:1.6; max-width:320px;}
+  .readout b{color:var(--ink);}
+  .status{margin-top:10px; padding:10px 13px; border-radius:8px; font-size:.85rem; font-weight:600;}
+  .status.before{background:rgba(79,176,224,0.14); color:var(--accent2); border:1px solid rgba(79,176,224,0.4);}
+  .status.after{background:rgba(89,201,138,0.14); color:var(--good); border:1px solid rgba(89,201,138,0.4);}
+  .status.at{background:rgba(216,178,92,0.16); color:var(--gold); border:1px solid rgba(216,178,92,0.5);}
+  .legend{font-size:.72rem; color:var(--muted); margin-top:8px; line-height:1.5;}
+  .sw{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px;}
+</style>
+</head>
+<body>
+
+<h1>Period-tripling: watching p₁,p₂,p₃ merge with 0 at λ = e^(2πi/3)</h1>
+<div class="sub">
+Using $G_\lambda(z)=\lambda z+z^2$, where the fixed point $0$ has multiplier exactly $\lambda$. The slider moves $\lambda = r\,e^{2\pi i/3}$
+by varying $r=|\lambda|$ through $1$ — angle fixed at the period-tripling value. All 8 roots of $G_\lambda^3(z)=z$ are found
+numerically every step; three of them are the genuine period-3 cycle that collides with $0$ exactly at $r=1$.
+</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <canvas id="jCanvas" width="360" height="360"></canvas>
+    <div class="row">
+      <span style="font-size:.8rem;color:var(--muted);">r = |λ| =</span>
+      <input type="range" id="rSlider" min="800" max="1200" value="1000">
+      <span id="rVal" style="font-size:.85rem;">1.000</span>
+    </div>
+    <div class="row">
+      <button class="special" id="beforeBtn">"Before" — r = 0.90 (0 attracting)</button>
+      <button class="special" id="afterBtn">"After" — r = 1.10 (cycle attracting)</button>
+      <button id="bifBtn">jump to r = 1 (the merge)</button>
+    </div>
+  </div>
+
+  <div class="panel" style="max-width:330px;">
+    <div class="readout" id="readout"></div>
+    <div class="status at" id="status"></div>
+    <div class="legend">
+      <div><span class="sw" style="background:var(--gold);"></span>p₁,p₂,p₃ — the merging 3-cycle</div>
+      <div><span class="sw" style="background:var(--gray);"></span>other 3-cycle (unrelated to this bifurcation)</div>
+      <div><span class="sw" style="background:var(--accent2);"></span>fixed points 0 and 1−λ</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const c0={re:0,im:0}, c1={re:1,im:0};
+function cadd(a,b){return{re:a.re+b.re,im:a.im+b.im};}
+function csub(a,b){return{re:a.re-b.re,im:a.im-b.im};}
+function cmul(a,b){return{re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re};}
+function cdiv(a,b){const d=b.re*b.re+b.im*b.im; return{re:(a.re*b.re+a.im*b.im)/d, im:(a.im*b.re-a.re*b.im)/d};}
+function cabs(a){return Math.hypot(a.re,a.im);}
+
+function polyAdd(a,b){
+  const n=Math.max(a.length,b.length), r=[];
+  for(let i=0;i<n;i++) r.push(cadd(a[i]||c0, b[i]||c0));
+  return r;
+}
+function polyMul(a,b){
+  const r=new Array(a.length+b.length-1).fill(null).map(()=>({re:0,im:0}));
+  for(let i=0;i<a.length;i++) for(let j=0;j<b.length;j++) r[i+j]=cadd(r[i+j], cmul(a[i],b[j]));
+  return r;
+}
+function polyScale(a,s){ return a.map(x=>cmul(x,s)); }
+function polyCompose(outer, inner){
+  let result=[c0];
+  let power=[c1];
+  for(let k=0;k<outer.length;k++){
+    result = polyAdd(result, polyScale(power, outer[k]));
+    if(k<outer.length-1) power = polyMul(power, inner);
+  }
+  return result;
+}
+function polyEval(coeffs, z){
+  let r = coeffs[coeffs.length-1];
+  for(let i=coeffs.length-2;i>=0;i--) r = cadd(cmul(r,z), coeffs[i]);
+  return r;
+}
+
+function GCoeffs(lambda){ return [c0, lambda, c1]; }
+function buildF(lambda){
+  const G = GCoeffs(lambda);
+  const G2 = polyCompose(G, G);
+  const G3 = polyCompose(G, G2);
+  const F = G3.slice();
+  F[1] = csub(F[1], c1);
+  return F;
+}
+
+let roots = null;
+function initRoots(){
+  roots = [];
+  for(let k=0;k<8;k++){
+    const ang = 2*Math.PI*k/8 + 0.15;
+    roots.push({ re:1.4*Math.cos(ang), im:1.4*Math.sin(ang) });
+  }
+}
+initRoots();
+
+function refineRoots(coeffs, iters){
+  for(let it=0; it<iters; it++){
+    for(let k=0;k<roots.length;k++){
+      const num = polyEval(coeffs, roots[k]);
+      let denom = c1;
+      for(let j=0;j<roots.length;j++){
+        if(j!==k) denom = cmul(denom, csub(roots[k], roots[j]));
+      }
+      roots[k] = csub(roots[k], cdiv(num, denom));
+    }
+  }
+}
+
+refineRoots(buildF({re:Math.cos(2*Math.PI/3), im:Math.sin(2*Math.PI/3)}), 250);
+
+let mergeIdx=[], otherIdx=[], fixedIdx=[];
+function classify(lambda){
+  const target0 = {re:0,im:0};
+  const target1 = csub(c1, lambda);
+  const dists0 = roots.map(r=>cabs(csub(r,target0)));
+  const dists1 = roots.map(r=>cabs(csub(r,target1)));
+  let i0=0; for(let i=1;i<8;i++) if(dists0[i]<dists0[i0]) i0=i;
+  let i1=0; for(let i=1;i<8;i++) if(i!==i0 && (i1===i0 || dists1[i]<dists1[i1])) i1=i;
+  fixedIdx=[i0,i1];
+  const rest = [];
+  for(let i=0;i<8;i++) if(i!==i0 && i!==i1) rest.push(i);
+  rest.sort((a,b)=>cabs(roots[a])-cabs(roots[b]));
+  mergeIdx = rest.slice(0,3);
+  otherIdx = rest.slice(3,6);
+}
+classify({re:Math.cos(2*Math.PI/3), im:Math.sin(2*Math.PI/3)});
+
+function orderCycle(idxs, lambda){
+  const G = GCoeffs(lambda);
+  const pts = idxs.map(i=>roots[i]);
+  const ordered = [pts[0]];
+  let cur = pts[0];
+  for(let step=0; step<2; step++){
+    const img = polyEval(G, cur);
+    let best=0, bestD=Infinity;
+    for(let i=0;i<pts.length;i++){
+      const d = cabs(csub(pts[i], img));
+      if(d<bestD && !ordered.includes(pts[i])){ bestD=d; best=i; }
+    }
+    cur = pts[best];
+    ordered.push(cur);
+  }
+  return ordered;
+}
+
+const jCanvas = document.getElementById('jCanvas');
+const jctx = jCanvas.getContext('2d');
+const JSZ = jCanvas.width;
+let viewR = 2.2;
+function toX(re){ return (re+viewR)/(2*viewR)*JSZ; }
+function toY(im){ return (im+viewR)/(2*viewR)*JSZ; }
+
+function renderBG(lambda){
+  const lw=140, lh=140;
+  const off=document.createElement('canvas'); off.width=lw; off.height=lh;
+  const octx=off.getContext('2d');
+  const img=octx.createImageData(lw,lh);
+  const maxIter=55, bailout=8;
+  for(let px=0;px<lw;px++) for(let py=0;py<lh;py++){
+    let zre=-viewR+(px/lw)*2*viewR, zim=-viewR+(py/lh)*2*viewR;
+    let iter=0;
+    while(zre*zre+zim*zim<bailout*bailout && iter<maxIter){
+      const nzre = lambda.re*zre-lambda.im*zim + zre*zre-zim*zim;
+      const nzim = lambda.re*zim+lambda.im*zre + 2*zre*zim;
+      zre=nzre; zim=nzim; iter++;
+    }
+    const idx=(py*lw+px)*4;
+    if(iter===maxIter){ img.data[idx]=232;img.data[idx+1]=234;img.data[idx+2]=240;img.data[idx+3]=255; }
+    else{
+      const t=iter/maxIter;
+      img.data[idx]=255; img.data[idx+1]=Math.floor(230-t*70); img.data[idx+2]=Math.floor(190-t*140); img.data[idx+3]=255;
+    }
+  }
+  octx.putImageData(img,0,0);
+  jctx.fillStyle='#0c111d'; jctx.fillRect(0,0,JSZ,JSZ);
+  jctx.imageSmoothingEnabled=true;
+  jctx.drawImage(off,0,0,JSZ,JSZ);
+}
+
+function drawMarker(pt,color,label){
+  const x=toX(pt.re), y=toY(pt.im);
+  jctx.fillStyle=color;
+  jctx.beginPath(); jctx.arc(x,y,5,0,Math.PI*2); jctx.fill();
+  jctx.strokeStyle='#0c111d'; jctx.lineWidth=1; jctx.stroke();
+  if(label){ jctx.font='11px Georgia'; jctx.fillStyle=color; jctx.fillText(label, x+7, y-7); }
+}
+
+function fmt(z){ return z.re.toFixed(3) + (z.im>=0?' + ':' − ') + Math.abs(z.im).toFixed(3) + 'i'; }
+
+function update(r){
+  const ang = 2*Math.PI/3;
+  const lambda = { re:r*Math.cos(ang), im:r*Math.sin(ang) };
+  const F = buildF(lambda);
+  refineRoots(F, 25);
+
+  const maxAbs = Math.max(2.0, ...roots.map(cabs))*1.25;
+  viewR = maxAbs;
+  renderBG(lambda);
+
+  const pOrdered = orderCycle(mergeIdx, lambda);
+  const oPts = otherIdx.map(i=>roots[i]);
+  const fZero = roots[fixedIdx[0]], fOther = roots[fixedIdx[1]];
+
+  jctx.strokeStyle='rgba(107,118,144,0.5)'; jctx.lineWidth=1;
+  jctx.beginPath();
+  oPts.forEach((p,i)=>{ const x=toX(p.re),y=toY(p.im); if(i===0) jctx.moveTo(x,y); else jctx.lineTo(x,y); });
+  jctx.closePath(); jctx.stroke();
+  oPts.forEach(p=>{ jctx.fillStyle='#6b7690'; const x=toX(p.re),y=toY(p.im); jctx.beginPath(); jctx.arc(x,y,3,0,Math.PI*2); jctx.fill(); });
+
+  jctx.strokeStyle='rgba(216,178,92,0.75)'; jctx.lineWidth=2;
+  jctx.beginPath();
+  pOrdered.forEach((p,i)=>{ const x=toX(p.re),y=toY(p.im); if(i===0) jctx.moveTo(x,y); else jctx.lineTo(x,y); });
+  jctx.closePath(); jctx.stroke();
+  drawMarker(pOrdered[0],'#d8b25c','p₁');
+  drawMarker(pOrdered[1],'#d8b25c','p₂');
+  drawMarker(pOrdered[2],'#d8b25c','p₃');
+
+  drawMarker(fZero, cabs(lambda)<1?'#59c98a':'#e0483c', '0');
+  drawMarker(fOther, '#4fb0e0', '1−λ');
+
+  document.getElementById('rVal').textContent = r.toFixed(3);
+  document.getElementById('readout').innerHTML =
+    'λ = ' + fmt(lambda) + '<br>' +
+    '|λ| = <b>' + r.toFixed(3) + '</b><br>' +
+    'p₁ = ' + fmt(pOrdered[0]) + '<br>' +
+    'p₂ = ' + fmt(pOrdered[1]) + '<br>' +
+    'p₃ = ' + fmt(pOrdered[2]) + '<br>' +
+    'avg |pᵢ| = <b>' + ((cabs(pOrdered[0])+cabs(pOrdered[1])+cabs(pOrdered[2]))/3).toFixed(4) + '</b>';
+
+  const statusEl = document.getElementById('status');
+  if(Math.abs(r-1) < 0.004){
+    statusEl.className='status at';
+    statusEl.textContent = 'r = 1 exactly (λ = e^{2πi/3}): p₁,p₂,p₃ have collapsed onto 0 — the period-tripling merge, matching the multiplicity-4 root you derived algebraically.';
+  } else if(r < 1){
+    statusEl.className='status before';
+    statusEl.textContent = '"Before": |λ|<1, so 0 is attracting. p₁,p₂,p₃ form a repelling 3-cycle sitting near 0 — no separate lobes yet.';
+  } else {
+    statusEl.className='status after';
+    statusEl.textContent = '"After": |λ|>1, so 0 is repelling. p₁,p₂,p₃ are now attracting and sit visibly apart — one per emerging lobe.';
+  }
+}
+
+const slider = document.getElementById('rSlider');
+slider.addEventListener('input', ()=> update(parseInt(slider.value)/1000));
+document.getElementById('beforeBtn').addEventListener('click', ()=>{ slider.value=900; update(0.900); });
+document.getElementById('afterBtn').addEventListener('click', ()=>{ slider.value=1100; update(1.100); });
+document.getElementById('bifBtn').addEventListener('click', ()=>{ slider.value=1000; update(1.000); });
+
+update(1.000);
+</script>
+
+</body>
+</html>

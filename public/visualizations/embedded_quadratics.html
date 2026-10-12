@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Embedded Quadratic Julia Sets — z³ + λ/z³</title>
+<style>
+  :root{
+    --bg:#030705; --panel:#081008; --panel2:#0c1810; --ink:#d8ffe0; --muted:#5f9c5a;
+    --neon:#39ff14; --magenta:#ff2ec4; --border:#163a12;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; padding:22px; background:var(--bg); color:var(--ink); font-family:"Courier New",monospace;}
+  h1{font-size:1.16rem; font-weight:700; margin:0 0 4px 0; color:var(--neon); text-shadow:0 0 8px rgba(57,255,20,0.5);}
+  .sub{color:var(--muted); font-size:.85rem; margin-bottom:14px; max-width:900px; line-height:1.55;}
+  .layout{display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start;}
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:13px; box-shadow:0 0 18px rgba(57,255,20,0.08);}
+  canvas{border-radius:5px; display:block; cursor:crosshair; background:#020402;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:9px; align-items:center;}
+  button{background:var(--panel2); color:var(--neon); border:1px solid var(--border); border-radius:5px; padding:6px 10px; font-size:.75rem; cursor:pointer; font-family:inherit;}
+  button:hover{border-color:var(--neon); box-shadow:0 0 8px rgba(57,255,20,0.35);}
+  button.active{background:var(--neon); color:#020402;}
+  .stat{font-size:.78rem; color:var(--muted); margin-top:9px; line-height:1.6; max-width:340px;}
+  .stat b{color:var(--ink);}
+  .legend{font-size:.7rem; color:var(--muted); margin-top:8px; line-height:1.5;}
+  .sw{display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:6px; vertical-align:-1px;}
+  .caption{font-size:.78rem; color:var(--muted); margin-top:8px; max-width:340px; line-height:1.55; border-left:2px solid var(--border); padding-left:9px;}
+</style>
+</head>
+<body>
+
+<h1>EMBEDDED QUADRATIC JULIA SETS — z³ + λ/z³ (Plates 28–29)</h1>
+<div class="sub">
+At these two special values of $\lambda$, the Julia set of the cubic rational map $f_\lambda(z)=z^3+\lambda/z^3$ contains
+infinitely many small copies of a specific <b>quadratic</b> Julia set, repeated over and over at every scale. Drag to zoom
+into any of the small black clusters near the boundary — each one is a shrunken copy of the basilica or the Douady rabbit.
+</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <canvas id="jCanvas" width="440" height="440"></canvas>
+    <div class="row">
+      <button class="active" id="basBtn">λ = −0.06 — basilica copies (Plate 28)</button>
+      <button id="rabBtn">λ = 0.1+0.05i — rabbit copies (Plate 29)</button>
+      <button id="resetBtn">↺ reset view</button>
+    </div>
+  </div>
+
+  <div class="panel" style="max-width:330px;">
+    <div class="stat" id="readout"></div>
+    <div class="legend">
+      <div><span class="sw" style="background:#39ff14;"></span>escapes to ∞ (or through the pole) — banded by speed</div>
+      <div><span class="sw" style="background:var(--magenta);"></span>attracted to a bounded cycle away from the pole</div>
+      <div><span class="sw" style="background:#0a0a0a; border:1px solid #333;"></span>the black clusters — each is an embedded quadratic Julia set</div>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+</div>
+
+<script>
+function cmul(a,b){return{re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re};}
+function cdiv(a,b){const d=b.re*b.re+b.im*b.im; return{re:(a.re*b.re+a.im*b.im)/d, im:(a.im*b.re-a.re*b.im)/d};}
+function cabs2(a){return a.re*a.re+a.im*a.im;}
+function f3(z, lambda){
+  const z3 = cmul(cmul(z,z),z);
+  const term = cdiv(lambda, z3);
+  return { re: z3.re+term.re, im: z3.im+term.im };
+}
+
+const ESC=1600, POLE2=1e-10, MAXITER=70;
+
+function escapeIter(z, lambda){
+  for(let i=0;i<MAXITER;i++){
+    const r2=cabs2(z);
+    if(r2>ESC || r2<POLE2) return i;
+    z = f3(z,lambda);
+  }
+  return -1;
+}
+function colorFor(iter){
+  if(iter<0) return [255,46,196];
+  if(iter>=MAXITER-1) return [8,8,8]; // slow-converging boundary clusters render near-black, matching the embedded copies
+  const t = Math.sqrt(iter/MAXITER);
+  return [Math.floor(6+t*40), Math.floor(30+t*225), Math.floor(4+t*30)];
+}
+
+const jCanvas=document.getElementById('jCanvas'), jctx=jCanvas.getContext('2d');
+const JSZ=jCanvas.width;
+const DEFAULT_BOUNDS = { reMin:-2.2, reMax:2.2, imMin:-2.2, imMax:2.2 };
+let bounds = {...DEFAULT_BOUNDS};
+let lambda = { re:-0.06, im:0 };
+
+function render(){
+  const img=jctx.createImageData(JSZ,JSZ);
+  for(let px=0;px<JSZ;px++){
+    const zre=bounds.reMin+(px/JSZ)*(bounds.reMax-bounds.reMin);
+    for(let py=0;py<JSZ;py++){
+      const zim=bounds.imMin+(py/JSZ)*(bounds.imMax-bounds.imMin);
+      const iter = escapeIter({re:zre,im:zim}, lambda);
+      const [r,g,b]=colorFor(iter);
+      const idx=(py*JSZ+px)*4;
+      img.data[idx]=r; img.data[idx+1]=g; img.data[idx+2]=b; img.data[idx+3]=255;
+    }
+  }
+  jctx.putImageData(img,0,0);
+  document.getElementById('readout').innerHTML =
+    'λ = <b>' + lambda.re.toFixed(4) + (lambda.im>=0?' + ':' − ') + Math.abs(lambda.im).toFixed(4) + 'i</b><br>' +
+    'view: re[' + bounds.reMin.toFixed(3) + ', ' + bounds.reMax.toFixed(3) + '] · im[' + bounds.imMin.toFixed(3) + ', ' + bounds.imMax.toFixed(3) + ']';
+}
+
+function toZ(x,y){ return { re:bounds.reMin+(x/JSZ)*(bounds.reMax-bounds.reMin), im:bounds.imMin+(y/JSZ)*(bounds.imMax-bounds.imMin) }; }
+
+let dragStart=null;
+jCanvas.addEventListener('mousedown',(e)=>{
+  const r=jCanvas.getBoundingClientRect();
+  dragStart={x:(e.clientX-r.left)/r.width*JSZ, y:(e.clientY-r.top)/r.height*JSZ};
+});
+jCanvas.addEventListener('mousemove',(e)=>{
+  if(!dragStart) return;
+  const r=jCanvas.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width*JSZ, y=(e.clientY-r.top)/r.height*JSZ;
+  render();
+  jctx.strokeStyle='#39ff14'; jctx.lineWidth=1.3;
+  jctx.strokeRect(Math.min(dragStart.x,x), Math.min(dragStart.y,y), Math.abs(x-dragStart.x), Math.abs(y-dragStart.y));
+});
+jCanvas.addEventListener('mouseup',(e)=>{
+  if(!dragStart) return;
+  const r=jCanvas.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width*JSZ, y=(e.clientY-r.top)/r.height*JSZ;
+  if(Math.hypot(x-dragStart.x,y-dragStart.y)>6){
+    const x0=Math.min(dragStart.x,x), x1=Math.max(dragStart.x,x);
+    const y0=Math.min(dragStart.y,y), y1=Math.max(dragStart.y,y);
+    const p0=toZ(x0,y0), p1=toZ(x1,y1);
+    bounds={reMin:p0.re,reMax:p1.re,imMin:p0.im,imMax:p1.im};
+    render();
+  }
+  dragStart=null;
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{ bounds={...DEFAULT_BOUNDS}; render(); });
+
+document.getElementById('basBtn').addEventListener('click', (e)=>{
+  document.getElementById('rabBtn').classList.remove('active'); e.target.classList.add('active');
+  lambda = { re:-0.06, im:0 };
+  bounds = {...DEFAULT_BOUNDS};
+  document.getElementById('caption').textContent = 'Plate 28: countless copies of the basilica — the two-lobed Julia set of z²−1 — sit embedded around the boundary of this Julia set, each one a shrunken, slightly distorted replica.';
+  render();
+});
+document.getElementById('rabBtn').addEventListener('click', (e)=>{
+  document.getElementById('basBtn').classList.remove('active'); e.target.classList.add('active');
+  lambda = { re:0.1, im:0.05 };
+  bounds = {...DEFAULT_BOUNDS};
+  document.getElementById('caption').textContent = 'Plate 29: here it is the Douady rabbit — the three-lobed dendrite-adjacent Julia set of z²+(−0.1226+0.7449i) — that appears embedded, over and over, around this Julia set\'s boundary.';
+  render();
+});
+
+document.getElementById('caption').textContent = 'Plate 28: countless copies of the basilica — the two-lobed Julia set of z²−1 — sit embedded around the boundary of this Julia set, each one a shrunken, slightly distorted replica.';
+render();
+</script>
+
+</body>
+</html>

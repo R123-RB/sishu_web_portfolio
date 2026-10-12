@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVD Image Compression Explorer</title>
+<style>
+:root{
+  --bg:#0f1117; --panel:#1a1d27; --panel2:#22263a;
+  --ink:#e8eaf6; --muted:#8892b0; --accent:#7c6fe0;
+  --red:#ef4444; --green:#22c55e; --blue:#38bdf8; --gold:#f59e0b;
+  --border:#2e3358;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  padding:20px 14px; min-height:100vh;
+}
+
+h1{text-align:center;font-size:1.5rem;margin-bottom:4px;background:linear-gradient(90deg,#7c6fe0,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sub{text-align:center;color:var(--muted);font-size:.88rem;margin-bottom:20px;}
+
+/* -------- layout -------- */
+.main{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:18px;}
+
+.card{background:var(--panel);border-radius:14px;padding:18px 20px;border:1px solid var(--border);}
+.card-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;}
+
+/* -------- top row -------- */
+.top-row{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;}
+@media(max-width:700px){.top-row{grid-template-columns:1fr;}}
+
+/* -------- pixel grid -------- */
+.pixel-grid{display:inline-grid;gap:2px;padding:8px;background:#111;border-radius:8px;}
+.px{width:28px;height:28px;border-radius:3px;cursor:pointer;transition:background .1s;}
+
+/* -------- controls -------- */
+.ctrl-section{display:flex;flex-direction:column;gap:14px;}
+.rank-display{
+  font-size:2rem;font-weight:800;color:var(--accent);
+  text-align:center;line-height:1;
+}
+.rank-label{text-align:center;color:var(--muted);font-size:.78rem;margin-top:2px;}
+.slider-row{display:flex;align-items:center;gap:10px;}
+.slider-row label{color:var(--muted);font-size:.82rem;white-space:nowrap;}
+input[type=range]{flex:1;accent-color:var(--accent);}
+.sigma-bar{height:6px;border-radius:3px;background:var(--accent);transition:width .3s;}
+
+/* buttons */
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+button{
+  padding:7px 13px;border:none;border-radius:8px;font-size:.82rem;
+  font-weight:600;cursor:pointer;transition:opacity .15s;
+}
+button:hover{opacity:.85;}
+.btn-p{background:var(--accent);color:#fff;}
+.btn-s{background:var(--panel2);color:var(--ink);border:1px solid var(--border);}
+.btn-g{background:var(--green);color:#000;}
+.btn-r{background:var(--red);color:#fff;}
+
+/* -------- components row -------- */
+.components-scroll{overflow-x:auto;padding-bottom:6px;}
+.components-row{display:flex;gap:14px;align-items:flex-start;min-width:max-content;}
+.comp-block{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.comp-sigma{font-size:.95rem;font-weight:800;color:var(--gold);}
+.comp-sublabel{font-size:.68rem;color:var(--muted);}
+canvas.mini{border-radius:6px;image-rendering:pixelated;}
+.comp-active canvas{box-shadow:0 0 0 2px var(--accent);}
+.comp-zero canvas{opacity:.35;}
+.plus-sign{font-size:1.4rem;color:var(--muted);align-self:center;padding-top:20px;}
+
+/* -------- reconstruction -------- */
+.recon-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;}
+.recon-block{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.recon-label{font-size:.75rem;color:var(--muted);}
+.recon-active{outline:2px solid var(--accent);border-radius:8px;}
+canvas.recon{border-radius:6px;image-rendering:pixelated;width:100%;max-width:160px;aspect-ratio:1;}
+
+/* -------- info -------- */
+.info-text{font-size:.88rem;line-height:1.75;color:var(--muted);}
+.info-text strong{color:var(--ink);}
+.info-text .hi{color:var(--accent);}
+.info-text .gr{color:var(--green);}
+.info-text .re{color:var(--red);}
+
+/* matrix text */
+.mat-nums{font-family:'Cascadia Code','Courier New',mono;font-size:.65rem;color:var(--muted);white-space:pre;overflow-x:auto;padding:8px;background:var(--panel2);border-radius:6px;margin-top:6px;}
+
+/* storage bar */
+.storage{height:10px;border-radius:5px;background:var(--panel2);overflow:hidden;margin-top:6px;}
+.storage-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--green),var(--accent));transition:width .4s;}
+
+footer{text-align:center;color:var(--muted);font-size:.75rem;margin-top:22px;}
+</style>
+</head>
+<body>
+<h1>SVD Image Compression</h1>
+<div class="sub">Click pixels to edit the image · drag the rank slider to compress · see how SVD rebuilds it</div>
+
+<div class="main">
+
+  <!-- TOP: pixel editor + controls -->
+  <div class="card">
+    <div class="top-row">
+      <!-- Pixel editor -->
+      <div>
+        <div class="card-title">Original image (click to toggle pixels)</div>
+        <div id="pixelEditor"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;">
+          <button class="btn-s" id="btnHeart">❤ Heart</button>
+          <button class="btn-s" id="btnLetter">A Letter</button>
+          <button class="btn-s" id="btnRandom">⚡ Random</button>
+          <button class="btn-r" id="btnClear">Clear</button>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="ctrl-section">
+        <div class="card-title">Compression controls</div>
+        <div>
+          <div class="rank-display" id="rankNum">—</div>
+          <div class="rank-label">Singular values used (rank)</div>
+        </div>
+        <div class="slider-row">
+          <label>Rank r</label>
+          <input type="range" id="slRank" min="1" max="7" step="1" value="4">
+          <span id="rankLabel" style="min-width:20px;text-align:right;font-weight:700;color:var(--accent);">4</span>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-bottom:4px;">
+            <span>Storage used vs original</span>
+            <span id="storePct">—</span>
+          </div>
+          <div class="storage"><div class="storage-fill" id="storeFill"></div></div>
+        </div>
+        <div id="sigmaList" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <div class="btn-row">
+          <button class="btn-g" id="btnDownload">⬇ Download app</button>
+        </div>
+        <div class="info-text" id="quickInfo"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPONENTS: rank-1 outer products -->
+  <div class="card">
+    <div class="card-title">Rank-1 components &nbsp;(σᵢ · uᵢ ⊗ vᵢᵀ) — each is an outer product scaled by its singular value</div>
+    <div class="components-scroll">
+      <div class="components-row" id="compRow"></div>
+    </div>
+  </div>
+
+  <!-- RECONSTRUCTION: cumulative sum -->
+  <div class="card">
+    <div class="card-title">Progressive reconstruction — adding components left to right</div>
+    <div class="recon-row" id="reconRow"></div>
+  </div>
+
+  <!-- EXPLANATION -->
+  <div class="card">
+    <div class="card-title">How it works</div>
+    <div class="info-text">
+      <strong>SVD</strong> decomposes any matrix A into <span class="hi">A = U · Σ · Vᵀ</span>.
+      We can rewrite this as a <strong>sum of rank-1 matrices</strong>:<br><br>
+      &nbsp;&nbsp;<span class="hi">A = σ₁(u₁⊗v₁ᵀ) + σ₂(u₂⊗v₂ᵀ) + ··· + σᵣ(uᵣ⊗vᵣᵀ)</span><br><br>
+      Each term is an <em>outer product</em> of one column of U with one row of Vᵀ, scaled by a singular value σᵢ.
+      Since <strong class="gr">σ₁ ≥ σ₂ ≥ ··· ≥ 0</strong>, the first terms carry the most information.
+      <br><br>
+      <strong>Image compression</strong>: keep only the first <em>k</em> terms. You need to store
+      <span class="re">k·(m + n + 1)</span> numbers instead of <span class="re">m·n</span>.
+      Drag the rank slider to see how few terms it takes to recognise the image!
+    </div>
+  </div>
+
+</div>
+<footer>Fully self-contained — no internet, no libraries. Press ⬇ Download to save.</footer>
+
+<script>
+// =====================================================
+// CONFIG
+// =====================================================
+const ROWS = 7, COLS = 7;
+
+const HEARTS = [
+  [0,1,1,0,1,1,0],
+  [1,1,1,1,1,1,1],
+  [1,1,1,1,1,1,1],
+  [0,1,1,1,1,1,0],
+  [0,0,1,1,1,0,0],
+  [0,0,0,1,0,0,0],
+  [0,0,0,0,0,0,0],
+];
+const LETTER_A = [
+  [0,0,1,1,1,0,0],
+  [0,1,0,0,0,1,0],
+  [1,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,1],
+  [1,0,0,0,0,0,1],
+  [0,0,0,0,0,0,0],
+];
+
+let pixels = HEARTS.map(r=>[...r]);
+
+// =====================================================
+// TINY SVD (power-iteration, sufficient for 7×7)
+// =====================================================
+function matVec(M,v){
+  const r=M.length,c=M[0].length,out=new Float64Array(r);
+  for(let i=0;i<r;i++) for(let j=0;j<c;j++) out[i]+=M[i][j]*v[j];
+  return out;
+}
+function matTVec(M,v){
+  const r=M.length,c=M[0].length,out=new Float64Array(c);
+  for(let i=0;i<r;i++) for(let j=0;j<c;j++) out[j]+=M[i][j]*v[i];
+  return out;
+}
+function norm(v){let s=0;for(let x of v)s+=x*x;return Math.sqrt(s);}
+function normalise(v){const n=norm(v);return v.map(x=>x/n);}
+function dot(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s;}
+
+function svd(A, maxK){
+  const m=A.length, n=A[0].length;
+  let R = A.map(r=>[...r]);
+  const Us=[], Vs=[], Ss=[];
+  const k = Math.min(maxK, m, n);
+  for(let iter=0;iter<k;iter++){
+    // power iteration on AᵀA to find v
+    let v = new Float64Array(n).fill(0); v[iter%n]=1;
+    for(let t=0;t<120;t++){
+      v = normalise(matTVec(R, matVec(R,v)));
+    }
+    let Rv = matVec(R,v);
+    let sigma = norm(Rv);
+    if(sigma < 1e-9){ Us.push(new Float64Array(m).fill(0)); Vs.push(v); Ss.push(0); continue; }
+    let u = Rv.map(x=>x/sigma);
+    Us.push(u); Vs.push(v); Ss.push(sigma);
+    // deflate
+    for(let i=0;i<m;i++) for(let j=0;j<n;j++) R[i][j] -= sigma*u[i]*v[j];
+  }
+  return {U:Us, S:Ss, V:Vs};
+}
+
+// =====================================================
+// DOM helpers
+// =====================================================
+const pixelEditor = document.getElementById('pixelEditor');
+const compRow = document.getElementById('compRow');
+const reconRow = document.getElementById('reconRow');
+const rankSlider = document.getElementById('slRank');
+const rankLabel = document.getElementById('rankLabel');
+const rankNum = document.getElementById('rankNum');
+const sigmaList = document.getElementById('sigmaList');
+const quickInfo = document.getElementById('quickInfo');
+const storeFill = document.getElementById('storeFill');
+const storePct = document.getElementById('storePct');
+
+// pixel canvas helper
+function makeCanvas(w,h,scale){
+  const c=document.createElement('canvas');
+  c.width=w; c.height=h;
+  c.style.width=w*scale+'px'; c.style.height=h*scale+'px';
+  c.style.imageRendering='pixelated';
+  return c;
+}
+
+function drawMatrix(canvas, mat, minV, maxV, isGray){
+  const ctx=canvas.getContext('2d');
+  const rows=mat.length, cols=mat[0].length;
+  const pw=canvas.width/cols, ph=canvas.height/rows;
+  const range = maxV-minV || 1;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const t = (mat[r][c]-minV)/range;
+    const g = Math.round(t*255);
+    ctx.fillStyle = `rgb(${g},${g},${g})`;
+    ctx.fillRect(c*pw, r*ph, pw, ph);
+  }
+}
+
+// =====================================================
+// Build pixel editor
+// =====================================================
+function buildEditor(){
+  pixelEditor.innerHTML='';
+  const grid = document.createElement('div');
+  grid.className='pixel-grid';
+  grid.style.gridTemplateColumns=`repeat(${COLS},auto)`;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const px=document.createElement('div');
+    px.className='px';
+    px.dataset.r=r; px.dataset.c=c;
+    px.style.background=pixels[r][c]?'#fff':'#111';
+    px.addEventListener('click',()=>{
+      pixels[r][c]=1-pixels[r][c];
+      px.style.background=pixels[r][c]?'#fff':'#111';
+      compute();
+    });
+    grid.appendChild(px);
+  }
+  pixelEditor.appendChild(grid);
+}
+
+// =====================================================
+// MAIN COMPUTE
+// =====================================================
+let cachedSVD=null;
+
+function compute(){
+  const m=ROWS,n=COLS;
+  const A = pixels.map(r=>[...r]);
+  const k = Math.min(m,n);
+  const {U,S,V} = svd(A,k);
+  cachedSVD={U,S,V,m,n,k};
+  // update rank slider max
+  const maxRank = S.filter(s=>s>1e-6).length || 1;
+  rankSlider.max = Math.min(k, maxRank+1, k);
+  rankSlider.max = k;
+  rankSlider.value = Math.min(parseInt(rankSlider.value), k);
+  render();
+}
+
+function render(){
+  if(!cachedSVD) return;
+  const {U,S,V,m,n,k} = cachedSVD;
+  const rank = parseInt(rankSlider.value);
+  rankLabel.textContent=rank;
+  rankNum.textContent=rank;
+
+  // storage ratio: original = m*n, compressed = rank*(m+n+1)
+  const orig=m*n, comp=rank*(m+n+1);
+  const pct=Math.min(100,Math.round(comp/orig*100));
+  storeFill.style.width=pct+'%';
+  storePct.textContent=pct+'% of original';
+
+  // quick info
+  const trueRank = S.filter(s=>s>1e-6).length;
+  quickInfo.innerHTML=`Matrix rank = <strong>${trueRank}</strong>. Singular values: 
+    ${S.map((s,i)=>`<span style="color:${i<rank?'#f59e0b':'#6b7280'}">${s.toFixed(2)}</span>`).join(', ')}.
+    ${rank===trueRank?'<span class="gr">✓ Perfect reconstruction!</span>':''}`;
+
+  // sigma bars
+  sigmaList.innerHTML='';
+  S.forEach((s,i)=>{
+    const max=S[0]||1;
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:6px;font-size:.75rem;';
+    row.innerHTML=`<span style="color:var(--muted);width:26px">σ${i+1}</span>
+      <div style="flex:1;height:5px;background:var(--panel2);border-radius:3px;overflow:hidden">
+        <div style="height:100%;border-radius:3px;width:${(s/max*100).toFixed(1)}%;background:${i<rank?'var(--gold)':'var(--border)'}"></div>
+      </div>
+      <span style="width:36px;text-align:right;color:${i<rank?'#f59e0b':'var(--muted)'};">${s.toFixed(2)}</span>`;
+    sigmaList.appendChild(row);
+  });
+
+  // ---- rank-1 components ----
+  compRow.innerHTML='';
+  const SCALE=4, CW=COLS*SCALE, CH=ROWS*SCALE;
+
+  for(let i=0;i<k;i++){
+    const sigma=S[i];
+    // outer product: u[:,i] outer v[i,:]
+    const comp=[];
+    for(let r=0;r<m;r++){
+      comp.push([]);
+      for(let c=0;c<n;c++) comp[r].push(sigma*U[i][r]*V[i][c]);
+    }
+    // find range for normalisation
+    let lo=Infinity,hi=-Infinity;
+    comp.forEach(row=>row.forEach(v=>{lo=Math.min(lo,v);hi=Math.max(hi,v);}));
+
+    const block=document.createElement('div');
+    block.className='comp-block '+(sigma>1e-6?'comp-active':'comp-zero');
+
+    const sigLbl=document.createElement('div');
+    sigLbl.className='comp-sigma';
+    sigLbl.textContent='σ'+(i+1)+' = '+sigma.toFixed(2);
+
+    const canvas=makeCanvas(COLS,ROWS,SCALE);
+    canvas.className='mini';
+    drawMatrix(canvas,comp,lo,hi,true);
+
+    const sub=document.createElement('div');
+    sub.className='comp-sublabel';
+    sub.textContent=`u${i+1} ⊗ v${i+1}ᵀ`;
+
+    block.appendChild(sigLbl);
+    block.appendChild(canvas);
+    block.appendChild(sub);
+    compRow.appendChild(block);
+
+    if(i<k-1){
+      const plus=document.createElement('div');
+      plus.className='plus-sign';
+      plus.textContent='+';
+      compRow.appendChild(plus);
+    }
+  }
+
+  // ---- cumulative reconstruction ----
+  reconRow.innerHTML='';
+  let cumulative = Array.from({length:m},()=>new Array(n).fill(0));
+
+  for(let i=0;i<k;i++){
+    const sigma=S[i];
+    for(let r=0;r<m;r++) for(let c=0;c<n;c++) cumulative[r][c]+=sigma*U[i][r]*V[i][c];
+
+    // clamp to [0,1] for display
+    const disp=cumulative.map(row=>row.map(v=>Math.max(0,Math.min(1,v))));
+
+    const block=document.createElement('div');
+    block.className='recon-block';
+    if(i===rank-1) block.classList.add('recon-active');
+
+    const canvas=makeCanvas(COLS,ROWS,20);
+    canvas.className='recon';
+    canvas.style.borderRadius='8px';
+    drawMatrix(canvas,disp,0,1,true);
+
+    const lbl=document.createElement('div');
+    lbl.className='recon-label';
+    lbl.textContent=i===0?'rank 1':`rank 1–${i+1}`;
+    if(i===rank-1) lbl.style.color='var(--accent)';
+
+    const sig=document.createElement('div');
+    sig.style.cssText='font-size:.7rem;color:var(--gold);';
+    sig.textContent=`+ σ${i+1}=${sigma.toFixed(2)}`;
+
+    block.appendChild(canvas);
+    block.appendChild(lbl);
+    block.appendChild(sig);
+    reconRow.appendChild(block);
+  }
+}
+
+// =====================================================
+// PRESETS
+// =====================================================
+function setPixels(mat){pixels=mat.map(r=>[...r]);buildEditor();compute();}
+document.getElementById('btnHeart').onclick=()=>setPixels(HEARTS);
+document.getElementById('btnLetter').onclick=()=>setPixels(LETTER_A);
+document.getElementById('btnRandom').onclick=()=>{
+  pixels=Array.from({length:ROWS},()=>Array.from({length:COLS},()=>Math.random()>.5?1:0));
+  buildEditor(); compute();
+};
+document.getElementById('btnClear').onclick=()=>{
+  pixels=Array.from({length:ROWS},()=>new Array(COLS).fill(0));
+  buildEditor(); compute();
+};
+rankSlider.addEventListener('input',render);
+
+// =====================================================
+// DOWNLOAD
+// =====================================================
+document.getElementById('btnDownload').addEventListener('click',()=>{
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='svd-image-compression.html';
+  a.click();
+});
+
+// =====================================================
+// INIT
+// =====================================================
+buildEditor();
+compute();
+</script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scaling & Rotation Matrix Explorer</title>
+<style>
+  :root{
+    --bg:#f5f6fa; --panel:#ffffff; --ink:#1d2333; --muted:#6b7280;
+    --accent:#4f46e5; --accent2:#059669; --grid:#e2e4ec; --axis:#9ca3af;
+    --orig:#9ca3af; --trans:#4f46e5; --i:#dc2626; --j:#059669;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:var(--bg); color:var(--ink); padding:20px;
+  }
+  h1{font-size:1.35rem; margin:0 0 4px; text-align:center;}
+  .sub{text-align:center; color:var(--muted); font-size:.9rem; margin-bottom:18px;}
+  .wrap{
+    display:grid; grid-template-columns: 340px 1fr; gap:18px; max-width:1100px; margin:0 auto;
+  }
+  @media(max-width:800px){ .wrap{grid-template-columns:1fr;} }
+  .panel{
+    background:var(--panel); border-radius:14px; padding:18px 20px;
+    box-shadow:0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.04);
+  }
+  .group{margin-bottom:18px;}
+  .group h3{margin:0 0 8px; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);}
+  label{display:flex; justify-content:space-between; font-size:.9rem; margin-top:10px;}
+  .val{font-variant-numeric:tabular-nums; font-weight:600; color:var(--accent);}
+  input[type=range]{width:100%; accent-color:var(--accent); margin-top:4px;}
+  .matrices{display:flex; gap:10px; flex-wrap:wrap;}
+  .matbox{
+    background:var(--bg); border-radius:10px; padding:10px 12px; flex:1; min-width:110px;
+  }
+  .matbox h4{margin:0 0 6px; font-size:.72rem; color:var(--muted); text-transform:uppercase;}
+  .mat{
+    display:inline-grid; grid-template-columns:auto auto; gap:2px 10px;
+    font-family:'Cascadia Code','Courier New',monospace; font-size:.92rem;
+  }
+  .mat span{text-align:right;}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:.82rem; margin-top:10px; color:var(--muted);}
+  .dot{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px;}
+  button{
+    background:var(--accent); color:#fff; border:none; border-radius:8px;
+    padding:8px 14px; font-size:.85rem; cursor:pointer; margin-top:6px; margin-right:8px;
+  }
+  button.secondary{background:#e5e7eb; color:var(--ink);}
+  button:hover{opacity:.9;}
+  canvas{width:100%; height:auto; border-radius:10px; background:#fff; display:block;}
+  .canvas-wrap{position:relative;}
+  .order-toggle{display:flex; gap:8px; margin-top:6px;}
+  .order-toggle button{margin-top:0; flex:1; background:#e5e7eb; color:var(--ink);}
+  .order-toggle button.active{background:var(--accent); color:#fff;}
+  footer{text-align:center; color:var(--muted); font-size:.78rem; margin-top:16px;}
+</style>
+</head>
+<body>
+
+<h1>Scaling & Rotation Matrix Explorer</h1>
+<div class="sub">Drag the sliders — the shape, basis vectors and matrices update live.</div>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="group">
+      <h3>Scaling</h3>
+      <label>Scale X (sₓ) <span class="val" id="sxVal">1.00</span></label>
+      <input type="range" id="sx" min="-2" max="2" step="0.01" value="1">
+      <label>Scale Y (s_y) <span class="val" id="syVal">1.00</span></label>
+      <input type="range" id="sy" min="-2" max="2" step="0.01" value="1">
+    </div>
+
+    <div class="group">
+      <h3>Rotation</h3>
+      <label>Angle θ (degrees) <span class="val" id="thVal">0°</span></label>
+      <input type="range" id="theta" min="-180" max="180" step="1" value="0">
+    </div>
+
+    <div class="group">
+      <h3>Apply order</h3>
+      <div class="order-toggle">
+        <button id="orderSR" class="active">Scale → Rotate</button>
+        <button id="orderRS">Rotate → Scale</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Matrices</h3>
+      <div class="matrices">
+        <div class="matbox">
+          <h4>Scale S</h4>
+          <div class="mat" id="matS"></div>
+        </div>
+        <div class="matbox">
+          <h4>Rotate R</h4>
+          <div class="mat" id="matR"></div>
+        </div>
+        <div class="matbox">
+          <h4>Combined</h4>
+          <div class="mat" id="matC"></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <button id="resetBtn" class="secondary">Reset</button>
+      <button id="downloadBtn">Download this app</button>
+    </div>
+  </div>
+
+  <div class="panel canvas-wrap">
+    <canvas id="cv" width="640" height="640"></canvas>
+    <div class="legend">
+      <div><span class="dot" style="background:var(--orig)"></span>Original unit square</div>
+      <div><span class="dot" style="background:var(--trans)"></span>Transformed square</div>
+      <div><span class="dot" style="background:var(--i)"></span>î → transformed</div>
+      <div><span class="dot" style="background:var(--j)"></span>ĵ → transformed</div>
+    </div>
+  </div>
+</div>
+
+<footer>Everything runs locally in your browser — no data leaves this page.</footer>
+
+<script>
+const sx = document.getElementById('sx');
+const sy = document.getElementById('sy');
+const theta = document.getElementById('theta');
+const sxVal = document.getElementById('sxVal');
+const syVal = document.getElementById('syVal');
+const thVal = document.getElementById('thVal');
+const matS = document.getElementById('matS');
+const matR = document.getElementById('matR');
+const matC = document.getElementById('matC');
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const orderSRBtn = document.getElementById('orderSR');
+const orderRSBtn = document.getElementById('orderRS');
+
+let order = 'SR'; // Scale then Rotate (apply S first, then R): C = R * S
+
+function fmt(n){ return (Math.round(n*100)/100).toFixed(2); }
+
+function matMul(A,B){
+  return [
+    A[0]*B[0]+A[1]*B[2], A[0]*B[1]+A[1]*B[3],
+    A[2]*B[0]+A[3]*B[2], A[2]*B[1]+A[3]*B[3]
+  ];
+}
+
+function renderMat(el, m){
+  el.innerHTML = `<span>${fmt(m[0])}</span><span>${fmt(m[1])}</span><span>${fmt(m[2])}</span><span>${fmt(m[3])}</span>`;
+}
+
+function draw(){
+  const Sx = parseFloat(sx.value), Sy = parseFloat(sy.value), Th = parseFloat(theta.value);
+  sxVal.textContent = fmt(Sx);
+  syVal.textContent = fmt(Sy);
+  thVal.textContent = Th + '°';
+
+  const rad = Th * Math.PI / 180;
+  const S = [Sx,0, 0,Sy];
+  const R = [Math.cos(rad), -Math.sin(rad), Math.sin(rad), Math.cos(rad)];
+  const C = order === 'SR' ? matMul(R,S) : matMul(S,R);
+
+  renderMat(matS, S);
+  renderMat(matR, R);
+  renderMat(matC, C);
+
+  // --- canvas draw ---
+  const w = cv.width, h = cv.height;
+  ctx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h/2;
+  const scalePx = 120; // px per unit
+
+  function toPx(x,y){ return [cx + x*scalePx, cy - y*scalePx]; }
+
+  // grid
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
+  ctx.lineWidth = 1;
+  for(let g=-4; g<=4; g++){
+    ctx.beginPath();
+    ctx.moveTo(...toPx(g,-4)); ctx.lineTo(...toPx(g,4)); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(...toPx(-4,g)); ctx.lineTo(...toPx(4,g)); ctx.stroke();
+  }
+  // axes
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--axis');
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(...toPx(-4,0)); ctx.lineTo(...toPx(4,0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(...toPx(0,-4)); ctx.lineTo(...toPx(0,4)); ctx.stroke();
+
+  const unitSquare = [[0,0],[1,0],[1,1],[0,1]];
+
+  function drawPoly(pts, strokeColor, fillColor, dash){
+    ctx.beginPath();
+    ctx.setLineDash(dash || []);
+    pts.forEach((p,i)=>{
+      const [px,py] = toPx(p[0],p[1]);
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    });
+    ctx.closePath();
+    if(fillColor){ ctx.fillStyle = fillColor; ctx.fill(); }
+    ctx.strokeStyle = strokeColor; ctx.lineWidth = 2; ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // original
+  drawPoly(unitSquare, getComputedStyle(document.documentElement).getPropertyValue('--orig'), null, [5,4]);
+
+  // transformed
+  const transformed = unitSquare.map(([x,y])=>[C[0]*x+C[1]*y, C[2]*x+C[3]*y]);
+  drawPoly(transformed, getComputedStyle(document.documentElement).getPropertyValue('--trans'), 'rgba(79,70,229,0.15)');
+
+  // basis vectors
+  function drawArrow(x,y,color){
+    const [x0,y0] = toPx(0,0);
+    const [x1,y1] = toPx(x,y);
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    const ang = Math.atan2(y1-y0, x1-x0);
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x1-10*Math.cos(ang-0.3), y1-10*Math.sin(ang-0.3));
+    ctx.lineTo(x1-10*Math.cos(ang+0.3), y1-10*Math.sin(ang+0.3));
+    ctx.closePath(); ctx.fill();
+  }
+  drawArrow(C[0], C[2], getComputedStyle(document.documentElement).getPropertyValue('--i'));
+  drawArrow(C[1], C[3], getComputedStyle(document.documentElement).getPropertyValue('--j'));
+}
+
+[sx,sy,theta].forEach(el => el.addEventListener('input', draw));
+
+orderSRBtn.addEventListener('click', ()=>{
+  order='SR'; orderSRBtn.classList.add('active'); orderRSBtn.classList.remove('active'); draw();
+});
+orderRSBtn.addEventListener('click', ()=>{
+  order='RS'; orderRSBtn.classList.add('active'); orderSRBtn.classList.remove('active'); draw();
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  sx.value=1; sy.value=1; theta.value=0; draw();
+});
+
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const blob = new Blob([document.documentElement.outerHTML], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'matrix-transform-applet.html';
+  a.click();
+});
+
+draw();
+</script>
+</body>
+</html>

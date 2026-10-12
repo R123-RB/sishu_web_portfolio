@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Poisson Distribution — Theory + Experiment</title>
+<style>
+:root{--g:#4f8b61;--gl:#eaf3e7;--p:#f4dce7;--pu:#e9e1f3;--o:#f9e2bf;--ink:#202020}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f7f3df,#edf4e9);color:var(--ink);font-family:"Segoe UI",Arial,sans-serif}
+.app{max-width:1250px;margin:auto;padding:18px}header{background:var(--gl);border:3px solid var(--g);border-radius:22px;padding:18px;text-align:center}
+h1{font:36px Georgia;margin:0}.sub{margin:7px 0 0}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.tabs button{border:0;border-radius:11px;padding:11px 17px;font-weight:700;cursor:pointer;background:#ddd}.tabs button.active{background:var(--g);color:white}
+.panel{display:none}.panel.active{display:block}.card{background:#fffdf9;border:2px solid #7b5a8d55;border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 5px 15px #0000000b}
+.card h2{margin:0 0 12px;font-size:23px}.motivation{background:var(--p)}.theory{background:var(--pu)}
+.question{font:25px Georgia;text-align:center;padding:16px;background:var(--o);border-radius:14px;margin:10px 0 16px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.flow div{padding:14px;border-radius:13px;text-align:center}
+.flow div:nth-child(1){background:var(--o)}.flow div:nth-child(2){background:var(--p)}.flow div:nth-child(3){background:var(--pu)}.flow div:nth-child(4){background:var(--gl)}
+.grid{display:grid;grid-template-columns:350px 1fr;gap:16px}.controls{background:var(--p)}
+label{display:flex;justify-content:space-between;font-weight:700;margin:13px 0 5px}input[type=range]{width:100%;accent-color:var(--g)}
+.v{font-size:19px;font-family:Georgia}.formula{font:19px Georgia;background:#fff;padding:14px;border-radius:12px;text-align:center;margin-top:15px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.metric{background:var(--o);padding:10px;border-radius:11px;text-align:center}.metric b{display:block;font-size:21px}
+canvas{width:100%;height:380px;background:white;border-radius:12px}.simgrid{display:grid;grid-template-columns:330px 1fr;gap:16px}
+.simcontrols{background:var(--gl)}button.run{background:var(--g);color:#fff;border:0;border-radius:10px;padding:12px 17px;font-weight:700;cursor:pointer;margin-top:12px;width:100%}
+.result{background:var(--o);padding:12px;border-radius:12px;margin-top:12px;line-height:1.5}
+table{border-collapse:collapse;width:100%;margin-top:12px;background:#fff}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:center}th{background:var(--pu)}
+.note{padding:13px;background:var(--gl);border:1px solid #9abd9f;border-radius:12px;line-height:1.55}
+.badge{display:inline-block;padding:4px 8px;border-radius:8px;background:var(--g);color:white;font-size:13px}
+@media(max-width:850px){.grid,.simgrid{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<h1>Poisson Distribution</h1>
+<div class="sub">From real-world events → rate λ → Poisson model → probability</div>
+</header>
+
+<div class="tabs">
+<button class="active" onclick="tab('motivation',this)">💡 Motivation</button>
+<button onclick="tab('theory',this)">📘 Theory</button>
+<button onclick="tab('experiment',this)">🧪 Experiment</button>
+<button onclick="tab('explore',this)">📊 Explore PMF</button>
+</div>
+
+<section id="motivation" class="panel active">
+<div class="card motivation">
+<h2>Why do we need the Poisson Distribution?</h2>
+<div class="question">Suppose events occur randomly over time or space.<br><b>How many events should we expect in a fixed interval?</b></div>
+<p>Imagine counting customers arriving at a service desk during a 10-minute interval. Instead of asking exactly when each customer arrives, we ask:</p>
+<ul>
+<li>What is the probability of getting <b>exactly 0, 1, 2, … events</b>?</li>
+<li>What happens when the average event rate changes?</li>
+<li>What happens when we repeat the counting experiment many times?</li>
+</ul>
+<p>The Poisson Distribution is useful for counting events occurring in a fixed interval when events occur independently at an approximately constant average rate.</p>
+</div>
+
+<div class="card">
+<h2>From real-world events to a distribution</h2>
+<div class="flow">
+<div><b>1. Choose an interval</b><br>Example: 10 minutes</div>
+<div><b>2. Define the event</b><br>Example: customer arrival</div>
+<div><b>3. Specify the rate</b><br>Average number of events = λ</div>
+<div><b>4. Count events</b><br>X = number of events</div>
+</div>
+<div class="note" style="margin-top:15px">
+If the average number of events in the chosen interval is <b>λ</b>, then the count <b>X</b> follows a Poisson Distribution:
+<center><b>X ~ Poisson(λ)</b></center>
+</div>
+</div>
+
+<div class="card">
+<h2>🎯 A concrete example</h2>
+<p><b>Customer arrivals:</b> Suppose a help desk receives an average of 4 customers every 10 minutes.</p>
+<p>Let “customer arrival” be the event. Then:</p>
+<div class="formula">λ = 4, &nbsp; X = number of customers arriving in 10 minutes</div>
+<p>We can ask: <b>What is P(X = 2)? What is the expected number of arrivals?</b></p>
+<p>Similar ideas appear in phone calls, website requests, machine failures, radioactive decay counts, defects, traffic arrivals, and other event-counting problems.</p>
+</div>
+</section>
+
+<section id="theory" class="panel">
+<div class="card theory">
+<h2>📘 The Poisson Model</h2>
+<p>A random variable X is modeled as Poisson when we count events in a fixed interval and the events are reasonably described by:</p>
+<ol>
+<li>A fixed <b>time, length, area, or volume interval</b> is selected.</li>
+<li>Events occur <b>independently</b> of one another.</li>
+<li>The average event rate is approximately <b>constant</b> over the interval.</li>
+<li>The probability of multiple events in an extremely small interval is negligible.</li>
+<li>X counts the <b>number of events</b> in the chosen interval.</li>
+</ol>
+<div class="formula">P(X=k) = e<sup>−λ</sup> λ<sup>k</sup> / k!, &nbsp; k=0,1,2,…</div>
+<div class="metrics">
+<div class="metric">Mean E(X)<b>λ</b></div>
+<div class="metric">Variance Var(X)<b>λ</b></div>
+<div class="metric">SD<b>√λ</b></div>
+</div>
+</div>
+
+<div class="card">
+<h2>🔎 Why does the formula look like this?</h2>
+<p>The Poisson PMF has two important ingredients:</p>
+<div class="formula">e<sup>−λ</sup> × λ<sup>k</sup> / k!</div>
+<p><b>λ</b> controls the average number of events, while <b>k</b> is the number of events whose probability we want to calculate. The factorial <b>k!</b> accounts for the ordering of the events in the count.</p>
+<div class="note"><b>Key teaching point:</b> Unlike the Binomial Distribution, Poisson does not require a fixed number of trials n. We specify an interval and an average event rate λ.</div>
+</div>
+</section>
+
+<section id="experiment" class="panel">
+<div class="simgrid">
+<div class="card simcontrols">
+<h2>🧪 Virtual Experiment</h2>
+<p>Choose the average number of events <b>λ</b> and repeat the counting experiment many times. Each repetition records only the <b>number of events</b>.</p>
+<label>Average rate λ <span class="v" id="slv">4.00</span></label>
+<input id="sl" type="range" min="0.1" max="15" step=".1" value="4">
+<label>Number of repeated experiments <span class="v" id="rv">1000</span></label>
+<input id="rep" type="range" min="10" max="5000" step="10" value="1000">
+<button class="run" onclick="simulate()">▶ Run Experiment</button>
+<div class="result" id="simResult">Run the experiment to compare the <b>experimental</b> frequencies with the <b>theoretical</b> Poisson probabilities.</div>
+</div>
+<div class="card">
+<canvas id="simCanvas" width="850" height="390"></canvas>
+<div class="note" style="margin-top:12px">
+<b>What should students notice?</b><br>
+With only a few repetitions, the experimental histogram is noisy. As the number of repetitions increases, it approaches the theoretical Poisson PMF. This illustrates the <b>law of large numbers</b>.
+</div>
+</div>
+</div>
+<div class="card">
+<h2>One count vs repeated counts</h2>
+<table>
+<tr><th>Level</th><th>Question</th><th>Mathematical object</th></tr>
+<tr><td>One interval</td><td>How many events occurred?</td><td>Random variable X</td></tr>
+<tr><td>Many intervals</td><td>How often does each k occur?</td><td>Poisson PMF</td></tr>
+<tr><td>Different rates</td><td>How does the distribution change?</td><td>Parameter λ</td></tr>
+</table>
+</div>
+</section>
+
+<section id="explore" class="panel">
+<div class="grid">
+<div class="card controls">
+<h2>🎛️ Explore λ</h2>
+<label>λ <span class="v" id="lv">4.00</span></label>
+<input id="l" type="range" min="0.1" max="20" step=".1" value="4">
+<div class="formula">X ~ Poisson(λ)<br><br>P(X=k)=e<sup>−λ</sup>λ<sup>k</sup>/k!</div>
+<div class="metrics">
+<div class="metric">Mean<b id="mean">4.00</b></div>
+<div class="metric">Variance<b id="variance">4.00</b></div>
+<div class="metric">SD<b id="sd">2.00</b></div>
+</div>
+<div class="note" style="margin-top:12px">Try λ = 1, 4, 10 and 20. Notice that the mean and variance are always equal to λ.</div>
+</div>
+<div class="card">
+<canvas id="chart" width="850" height="390"></canvas>
+<div class="note">Try a small λ first, then increase λ. Observe how the distribution shifts to the right and becomes more symmetric.</div>
+</div>
+</div>
+</section>
+</div>
+
+<script>
+function tab(id,btn){
+document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+btn.classList.add('active');
+}
+function factorial(k){let r=1;for(let i=2;i<=k;i++)r*=i;return r}
+function pmf(l,k){return Math.exp(-l)*Math.pow(l,k)/factorial(k)}
+function poissonMaxK(l){return Math.max(8,Math.ceil(l+6*Math.sqrt(l)+5))}
+function drawCanvas(canvas,l,experimental=null){
+let c=canvas.getContext('2d'),W=canvas.width,H=canvas.height;c.clearRect(0,0,W,H);
+let left=55,right=20,top=45,bottom=55,cw=W-left-right,ch=H-top-bottom;
+let n=poissonMaxK(l),theo=Array.from({length:n+1},(_,k)=>pmf(l,k));
+let ymax=experimental?Math.max(...theo,...experimental)*1.18:Math.max(...theo)*1.18;
+c.font='bold 16px Arial';c.fillStyle='#222';c.fillText(experimental?'Experiment vs Theory':'Poisson Probability Mass Function',left,25);
+c.strokeStyle='#888';c.beginPath();c.moveTo(left,top);c.lineTo(left,top+ch);c.lineTo(W-right,top+ch);c.stroke();
+let slot=cw/(n+1),bw=Math.max(3,slot*.62);
+theo.forEach((v,k)=>{
+let x=left+(k+.5)*slot-bw/2,h=v/ymax*ch;
+c.fillStyle='#9a79aa';c.fillRect(x,top+ch-h,bw,h);
+if(experimental){let eh=experimental[k]/ymax*ch;c.fillStyle='#4f8b61';c.fillRect(x+bw*.25,top+ch-eh,bw*.5,eh)}
+if(n<=30||k%Math.ceil(n/25)===0){c.fillStyle='#222';c.font='12px Arial';c.fillText(k,x+bw/2-4,top+ch+18)}
+});
+c.font='13px Arial';c.fillText('k = number of events',W/2-65,H-12);
+c.save();c.translate(14,H/2+50);c.rotate(-Math.PI/2);c.fillText('Probability / relative frequency',0,0);c.restore();
+if(experimental){
+c.fillStyle='#9a79aa';c.fillRect(W-180,18,12,12);c.fillStyle='#222';c.fillText('Theoretical PMF',W-162,29);
+c.fillStyle='#4f8b61';c.fillRect(W-180,35,12,12);c.fillStyle='#222';c.fillText('Experimental',W-162,46);
+}
+}
+function updateExplore(){
+let l=+document.getElementById('l').value;
+document.getElementById('lv').textContent=l.toFixed(2);
+document.getElementById('mean').textContent=l.toFixed(2);
+document.getElementById('variance').textContent=l.toFixed(2);
+document.getElementById('sd').textContent=Math.sqrt(l).toFixed(2);
+drawCanvas(document.getElementById('chart'),l);
+}
+function samplePoisson(l){
+let L=Math.exp(-l),p=1,k=0;
+do{k++;p*=Math.random()}while(p>L);
+return k-1;
+}
+function simulate(){
+let l=+document.getElementById('sl').value,R=+document.getElementById('rep').value;
+let n=poissonMaxK(l),counts=Array(n+1).fill(0);
+for(let r=0;r<R;r++){let k=samplePoisson(l);if(k>=counts.length){counts.length=k+1;counts.fill(0, n+1)}counts[k]++}
+let freq=counts.map(x=>x/R),theo=counts.map((_,k)=>pmf(l,k));
+drawCanvas(document.getElementById('simCanvas'),l,freq);
+let expMean=freq.reduce((s,x,k)=>s+k*x,0);
+let maxDiff=Math.max(...freq.map((x,k)=>Math.abs(x-(theo[k]||0))));
+document.getElementById('simResult').innerHTML=`<b>${R.toLocaleString()}</b> repetitions completed.<br>Experimental mean ≈ <b>${expMean.toFixed(3)}</b>; theoretical mean = <b>${l.toFixed(3)}</b>.<br>Experimental variance ≈ <b>${freq.reduce((s,x,k)=>s+x*Math.pow(k-expMean,2),0).toFixed(3)}</b>; theoretical variance = <b>${l.toFixed(3)}</b>.<br>Largest absolute probability difference ≈ <b>${maxDiff.toFixed(3)}</b>.`;
+}
+const l=document.getElementById('l'),sl=document.getElementById('sl'),rep=document.getElementById('rep');
+function simLabels(){slv.textContent=(+sl.value).toFixed(2);rv.textContent=rep.value}
+l.addEventListener('input',updateExplore);sl.addEventListener('input',simLabels);rep.addEventListener('input',simLabels);
+updateExplore();simLabels();
+</script>
+</body>
+</html>

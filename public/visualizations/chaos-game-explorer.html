@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chaos Game Explorer</title>
+<style>
+  :root{
+    --cream:#fbf8f2;
+    --ink:#2c2a26;
+    --ink-soft:#5c584f;
+    --green:#e3f5e6;
+    --green-line:#a9d9b3;
+    --green-ink:#276b3c;
+    --pink:#fce6f0;
+    --pink-line:#eab3cd;
+    --pink-ink:#a03d6f;
+    --accent:#5b6ee8;
+    --accent-dark:#4353c4;
+    --amber:#e8a23a;
+    --card-shadow: 0 3px 0 rgba(44,42,38,0.06), 0 8px 20px rgba(44,42,38,0.05);
+    --radius:18px;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Trebuchet MS", Verdana, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:var(--cream); color:var(--ink); font-family:var(--sans);}
+  .page{max-width:1180px; margin:0 auto; padding:30px 22px 70px 22px;}
+
+  header{text-align:center; margin-bottom:26px;}
+  header h1{
+    font-size:clamp(28px,4.2vw,42px);
+    font-weight:800;
+    margin:0 0 8px 0;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    color:var(--ink-soft);
+    font-size:16px;
+    max-width:60ch;
+    margin:0 auto;
+  }
+
+  .card{
+    border-radius:var(--radius);
+    padding:18px 22px;
+    box-shadow:var(--card-shadow);
+    border:2px solid transparent;
+  }
+  .card.green{background:var(--green); border-color:var(--green-line);}
+  .card.pink{background:var(--pink); border-color:var(--pink-line);}
+  .card.white{background:#fff; border-color:#eee;}
+  .card b{font-weight:800;}
+  .card h3{margin:0 0 8px 0; font-size:17px; font-weight:800;}
+  .card p{margin:6px 0; font-size:15px; line-height:1.55;}
+  .card ul, .card ol{margin:6px 0; padding-left:20px; font-size:15px; line-height:1.6;}
+  .icon{font-size:22px; float:right; margin-left:10px;}
+
+  .explainer{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+    margin-bottom:36px;
+  }
+  .explainer .span2{grid-column:1/-1;}
+  @media (max-width:760px){ .explainer{grid-template-columns:1fr;} }
+
+  section.section-title{
+    font-size:22px;
+    font-weight:800;
+    margin:6px 0 14px 0;
+  }
+
+  .playground{
+    display:grid;
+    grid-template-columns:minmax(320px,480px) 1fr;
+    gap:22px;
+    margin-bottom:40px;
+  }
+  @media (max-width:900px){ .playground{grid-template-columns:1fr;} }
+
+  .stage{
+    background:#fff;
+    border-radius:var(--radius);
+    box-shadow:var(--card-shadow);
+    padding:16px;
+    border:2px solid #eee;
+  }
+  .canvas-wrap{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:14px;
+    overflow:hidden;
+    background:#fdfcf9;
+    border:1px solid #eee;
+    cursor:crosshair;
+  }
+  .canvas-wrap canvas{position:absolute; top:0; left:0; width:100%; height:100%;}
+  .stage .row{
+    display:flex;
+    gap:8px;
+    margin-top:12px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  button{
+    font-family:var(--sans);
+    font-size:14px;
+    border:2px solid #e4e1d9;
+    background:#fff;
+    color:var(--ink);
+    border-radius:12px;
+    padding:8px 14px;
+    cursor:pointer;
+    font-weight:700;
+    transition:transform .08s, border-color .15s;
+  }
+  button:hover{border-color:var(--accent); transform:translateY(-1px);}
+  button:active{transform:translateY(0);}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  button.primary:hover{background:var(--accent-dark); border-color:var(--accent-dark);}
+  button.small{padding:6px 10px; font-size:12.5px; border-radius:9px;}
+  button.chip{background:#fff;}
+  button.chip.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+  button:disabled{opacity:0.4; cursor:default; transform:none;}
+
+  .stat-line{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+  .stat-line b{color:var(--ink);}
+
+  .panel{
+    background:#fff;
+    border-radius:var(--radius);
+    box-shadow:var(--card-shadow);
+    padding:20px 22px;
+    border:2px solid #eee;
+  }
+  .panel h3{margin:0 0 10px 0; font-size:16px; font-weight:800;}
+  .field{margin-bottom:18px;}
+  .field label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .chips{display:flex; gap:8px; flex-wrap:wrap;}
+  input[type=range]{width:100%; accent-color:var(--accent);}
+  .range-readout{display:flex; justify-content:space-between; font-family:var(--mono); font-size:12.5px; color:var(--ink-soft);}
+  .toggle-row{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-soft); margin:8px 0;}
+  .toggle-row input{accent-color:var(--accent);}
+  .divider{border:none; border-top:1px solid #eee; margin:16px 0;}
+
+  .try-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+    margin-bottom:40px;
+  }
+  @media (max-width:900px){ .try-grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:600px){ .try-grid{grid-template-columns:1fr;} }
+  .try-card{
+    background:#fff;
+    border:2px solid #eee;
+    border-radius:16px;
+    padding:16px 18px;
+    box-shadow:var(--card-shadow);
+    cursor:pointer;
+    transition:border-color .15s, transform .08s;
+  }
+  .try-card:hover{border-color:var(--accent); transform:translateY(-2px);}
+  .try-card .emoji{font-size:24px;}
+  .try-card h4{margin:8px 0 4px 0; font-size:15px; font-weight:800;}
+  .try-card p{margin:0; font-size:13px; color:var(--ink-soft); line-height:1.5;}
+
+  .reflection{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+  }
+  @media (max-width:760px){ .reflection{grid-template-columns:1fr;} }
+
+  footer{
+    text-align:center;
+    color:#a39d8f;
+    font-size:12.5px;
+    margin-top:50px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>🎲 Chaos Game Explorer</h1>
+    <p>A simple random process that surprisingly produces the Sierpinski triangle — and a lot of other fractals once you start bending the rules.</p>
+  </header>
+
+  <section class="explainer">
+    <div class="card green"><span class="icon">💡</span>
+      <p>A simple random process that surprisingly produces the <b>Sierpinski triangle</b> — a classic fractal.</p>
+    </div>
+    <div class="card pink"><span class="icon">🌀</span>
+      <p>This is called the <b>Chaos Game</b> — a <b>random dynamical system</b>.</p>
+    </div>
+    <div class="card green span2"><span class="icon">📐</span>
+      <h3>Rules of the game</h3>
+      <ol>
+        <li>Pick some points in the plane — the vertices of a shape.</li>
+        <li>Pick any starting point <b>p₀</b> — it doesn't even need to be inside the shape.</li>
+      </ol>
+    </div>
+    <div class="card pink span2"><span class="icon">🎲</span>
+      <h3>Iterate</h3>
+      <ul>
+        <li>Randomly choose one vertex.</li>
+        <li>Move <b>partway</b> toward it (halfway, by default).</li>
+        <li>That new point becomes the next in the sequence.</li>
+        <li>Repeat forever: p₀ → p₁ → p₂ → …</li>
+      </ul>
+    </div>
+    <div class="card green span2"><span class="icon">🔭</span>
+      <h3>Orbit &amp; the big question</h3>
+      <p>This sequence is called the <b>orbit</b> of p₀. If you always pick the <em>same</em> vertex, the orbit marches straight there and stops. But what happens if the choice is <b>genuinely random</b>, every time? Play below and find out — then start bending the rules.</p>
+    </div>
+  </section>
+
+  <div class="section-title">🧪 The lab</div>
+  <div class="playground">
+    <div class="stage">
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="bg"></canvas>
+        <canvas id="fg"></canvas>
+        <canvas id="ind"></canvas>
+      </div>
+      <div class="row">
+        <button class="primary" id="playBtn">▶ Play</button>
+        <button id="stepBtn">Step once</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>speed</label>
+        <input type="range" id="speedSlider" min="1" max="1500" value="200">
+      </div>
+      <div class="stat-line">points plotted: <b id="countReadout">0</b> &nbsp;·&nbsp; click inside the shape to move the starting point</div>
+    </div>
+
+    <div class="panel">
+      <h3>Shape</h3>
+      <div class="field">
+        <label>number of vertices</label>
+        <div class="chips" id="vertexChips"></div>
+      </div>
+
+      <h3>Movement rule</h3>
+      <div class="field">
+        <label>which vertex gets chosen each step?</label>
+        <div class="chips" id="ruleChips">
+          <button class="chip active" data-rule="random">true random</button>
+          <button class="chip" data-rule="norepeat">never repeat last</button>
+          <button class="chip" data-rule="norepeat2">never repeat last 2</button>
+          <button class="chip" data-rule="fixed">always the same vertex</button>
+        </div>
+      </div>
+      <div class="field" id="fixedVertexField" style="display:none;">
+        <label>which vertex?</label>
+        <div class="chips" id="fixedVertexChips"></div>
+      </div>
+
+      <div class="field">
+        <label>move ratio (fraction of the distance to travel) — <span id="ratioReadout">0.50</span></label>
+        <input type="range" id="ratioSlider" min="0.05" max="0.9" step="0.01" value="0.5">
+      </div>
+
+      <div class="toggle-row"><input type="checkbox" id="hideStartCb" checked><label for="hideStartCb">hide the first few "wandering" points</label></div>
+      <div class="toggle-row"><input type="checkbox" id="showMoveCb" checked><label for="showMoveCb">show the current move (line + highlighted vertex)</label></div>
+
+      <hr class="divider">
+      <div class="stat-line">
+        shape: <b id="statShape">triangle</b> &nbsp;·&nbsp; rule: <b id="statRule">true random</b> &nbsp;·&nbsp; ratio: <b id="statRatio">0.50</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">✨ Try these</div>
+  <div class="try-grid" id="tryGrid"></div>
+
+  <div class="section-title">🔍 What's actually going on</div>
+  <div class="reflection">
+    <div class="card white">
+      <h3>Why "always the same vertex" converges</h3>
+      <p>Moving halfway toward a fixed point is a <b>contraction</b> — it always shrinks the distance to that point by the same fraction. Do it forever and you're squeezed onto that single point, no matter where you started.</p>
+    </div>
+    <div class="card white">
+      <h3>Why true randomness builds a fractal</h3>
+      <p>At every step, huge regions become <b>impossible to land in</b> — no matter which vertex you move toward, you can never jump into certain "forbidden" zones from outside them. What's left after infinitely many steps is the delicate, gapped Sierpinski triangle.</p>
+    </div>
+    <div class="card white">
+      <h3>Why the square just fills in solid</h3>
+      <p>With 4 corners and ratio 1/2, the four shrunken copies of the square <b>tile it perfectly</b> — no gaps, no overlaps. There's no "forbidden zone" left to carve out a fractal, so the whole square fills in.</p>
+    </div>
+    <div class="card white">
+      <h3>Why banning repeats brings a fractal back</h3>
+      <p>Forbidding a repeat removes some of the moves that were filling in those gaps. That's enough to open up new forbidden zones — and a fractal reappears, even in shapes that looked solid under plain randomness.</p>
+    </div>
+  </div>
+
+  <footer>Chaos Game Explorer — an interactive companion for exploring iterated random contractions.</footer>
+</div>
+
+<script>
+(function(){
+  const bg = document.getElementById('bg'), fg = document.getElementById('fg'), ind = document.getElementById('ind');
+  const wrap = document.getElementById('canvasWrap');
+  const bgx = bg.getContext('2d'), fgx = fg.getContext('2d'), indx = ind.getContext('2d');
+  const countReadout = document.getElementById('countReadout');
+  const ratioSlider = document.getElementById('ratioSlider');
+  const ratioReadout = document.getElementById('ratioReadout');
+  const speedSlider = document.getElementById('speedSlider');
+  const vertexChips = document.getElementById('vertexChips');
+  const ruleChips = document.getElementById('ruleChips');
+  const fixedVertexField = document.getElementById('fixedVertexField');
+  const fixedVertexChips = document.getElementById('fixedVertexChips');
+  const hideStartCb = document.getElementById('hideStartCb');
+  const showMoveCb = document.getElementById('showMoveCb');
+  const statShape = document.getElementById('statShape');
+  const statRule = document.getElementById('statRule');
+  const statRatio = document.getElementById('statRatio');
+
+  const HUES = [210, 340, 150, 40, 270, 190];
+  function vColor(i,a){ return `hsla(${HUES[i%HUES.length]}, 62%, 48%, ${a})`; }
+
+  let state = {
+    n: 3,
+    ratio: 0.5,
+    rule: 'random',
+    fixedIndex: 0,
+    hideStart: true,
+    showMove: true,
+  };
+  let vertices = [];
+  let cur = {x:0.5, y:0.5};
+  let lastPicks = [];
+  let plotted = 0, totalIter = 0;
+  let running = false;
+  let cssSize = 0, dpr = 1;
+  let lastMove = null; // {from, to, idx}
+
+  const SHAPE_NAMES = {3:'triangle',4:'square',5:'pentagon',6:'hexagon',7:'heptagon',8:'octagon'};
+
+  function computeVertices(n){
+    const arr = [];
+    for(let i=0;i<n;i++){
+      const angle = -Math.PI/2 + i*(2*Math.PI/n);
+      arr.push({x:0.5+0.42*Math.cos(angle), y:0.5+0.42*Math.sin(angle)});
+    }
+    return arr;
+  }
+
+  function resize(){
+    const rect = wrap.getBoundingClientRect();
+    cssSize = rect.width;
+    dpr = Math.max(1, window.devicePixelRatio||1);
+    [bg,fg,ind].forEach(c=>{ c.width=cssSize*dpr; c.height=cssSize*dpr; });
+    bgx.setTransform(dpr,0,0,dpr,0,0);
+    fgx.setTransform(dpr,0,0,dpr,0,0);
+    indx.setTransform(dpr,0,0,dpr,0,0);
+    drawBackground();
+  }
+  window.addEventListener('resize', resize);
+
+  function toCanvas(wx,wy){ return [wx*cssSize, wy*cssSize]; }
+  function toWorld(sx,sy){ return [sx/cssSize, sy/cssSize]; }
+
+  function drawBackground(){
+    bgx.clearRect(0,0,cssSize,cssSize);
+    bgx.fillStyle = '#fdfcf9';
+    bgx.fillRect(0,0,cssSize,cssSize);
+    // shape outline
+    bgx.beginPath();
+    vertices.forEach((v,i)=>{ const [sx,sy]=toCanvas(v.x,v.y); if(i===0) bgx.moveTo(sx,sy); else bgx.lineTo(sx,sy); });
+    bgx.closePath();
+    bgx.strokeStyle = 'rgba(44,42,38,0.14)';
+    bgx.lineWidth = 1.5;
+    bgx.stroke();
+    // vertices
+    vertices.forEach((v,i)=>{
+      const [sx,sy] = toCanvas(v.x,v.y);
+      bgx.beginPath(); bgx.arc(sx,sy,7,0,Math.PI*2);
+      bgx.fillStyle = vColor(i,1);
+      bgx.fill();
+      bgx.font='11px sans-serif'; bgx.fillStyle='#2c2a26';
+      bgx.textAlign='center'; bgx.textBaseline='middle';
+      const labelOffset = v.y < 0.5 ? -14 : 14;
+      bgx.fillText(String.fromCharCode(65+i), sx, sy+labelOffset);
+    });
+  }
+
+  function clearFg(){ fgx.clearRect(0,0,cssSize,cssSize); }
+  function clearInd(){ indx.clearRect(0,0,cssSize,cssSize); }
+
+  function drawIndicator(){
+    clearInd();
+    if(!state.showMove || !lastMove) return;
+    const [fx,fy] = toCanvas(lastMove.from.x, lastMove.from.y);
+    const [tx,ty] = toCanvas(lastMove.to.x, lastMove.to.y);
+    indx.strokeStyle = 'rgba(91,110,232,0.55)';
+    indx.lineWidth = 1.5;
+    indx.setLineDash([4,3]);
+    indx.beginPath(); indx.moveTo(fx,fy); indx.lineTo(tx,ty); indx.stroke();
+    indx.setLineDash([]);
+    const [vx,vy] = toCanvas(vertices[lastMove.idx].x, vertices[lastMove.idx].y);
+    indx.beginPath(); indx.arc(vx,vy,11,0,Math.PI*2);
+    indx.strokeStyle = vColor(lastMove.idx,0.9);
+    indx.lineWidth = 2.5;
+    indx.stroke();
+    indx.beginPath(); indx.arc(tx,ty,4,0,Math.PI*2);
+    indx.fillStyle = '#2c2a26';
+    indx.fill();
+  }
+
+  function pickIndex(){
+    const n = vertices.length;
+    if(state.rule === 'fixed') return state.fixedIndex;
+    let candidates = [...Array(n).keys()];
+    if(state.rule === 'norepeat' && lastPicks.length>=1){
+      candidates = candidates.filter(i=>i!==lastPicks[lastPicks.length-1]);
+    } else if(state.rule === 'norepeat2' && lastPicks.length>=1){
+      const excl = new Set(lastPicks.slice(-2));
+      candidates = candidates.filter(i=>!excl.has(i));
+    }
+    if(candidates.length===0) candidates=[...Array(n).keys()];
+    return candidates[Math.floor(Math.random()*candidates.length)];
+  }
+
+  function doOneStep(){
+    const idx = pickIndex();
+    const V = vertices[idx];
+    const from = {x:cur.x, y:cur.y};
+    cur = { x: cur.x + (V.x-cur.x)*state.ratio, y: cur.y + (V.y-cur.y)*state.ratio };
+    lastPicks.push(idx);
+    if(lastPicks.length>5) lastPicks.shift();
+    totalIter++;
+    lastMove = {from, to:{x:cur.x,y:cur.y}, idx};
+    const burnIn = state.hideStart ? 8 : 0;
+    if(totalIter > burnIn){
+      const [sx,sy] = toCanvas(cur.x, cur.y);
+      fgx.fillStyle = 'rgba(91,110,232,0.5)';
+      fgx.fillRect(sx,sy,1.6,1.6);
+      plotted++;
+    }
+  }
+
+  function updateStats(){
+    countReadout.textContent = plotted.toLocaleString();
+  }
+
+  let rafId=null;
+  function loop(){
+    const n = parseInt(speedSlider.value,10);
+    for(let i=0;i<n;i++) doOneStep();
+    drawIndicator();
+    updateStats();
+    if(running) rafId = requestAnimationFrame(loop);
+  }
+  function setRunning(v){
+    running = v;
+    document.getElementById('playBtn').textContent = running ? '⏸ Pause' : '▶ Play';
+    if(running) rafId = requestAnimationFrame(loop);
+    else if(rafId) cancelAnimationFrame(rafId);
+  }
+
+  function resetOrbit(keepShape){
+    setRunning(false);
+    cur = {x:0.5,y:0.5};
+    lastPicks = [];
+    plotted = 0; totalIter = 0; lastMove = null;
+    clearFg(); clearInd();
+    updateStats();
+  }
+
+  function rebuildShape(){
+    vertices = computeVertices(state.n);
+    if(state.fixedIndex >= state.n) state.fixedIndex = 0;
+    drawBackground();
+    buildFixedVertexChips();
+    statShape.textContent = SHAPE_NAMES[state.n] || (state.n+'-gon');
+    resetOrbit();
+  }
+
+  function buildVertexChips(){
+    vertexChips.innerHTML = '';
+    [3,4,5,6,7,8].forEach(n=>{
+      const b = document.createElement('button');
+      b.className = 'chip small' + (n===state.n ? ' active':'');
+      b.textContent = n;
+      b.addEventListener('click', ()=>{
+        state.n = n;
+        [...vertexChips.children].forEach(c=>c.classList.remove('active'));
+        b.classList.add('active');
+        rebuildShape();
+      });
+      vertexChips.appendChild(b);
+    });
+  }
+
+  function buildFixedVertexChips(){
+    fixedVertexChips.innerHTML = '';
+    for(let i=0;i<state.n;i++){
+      const b = document.createElement('button');
+      b.className = 'chip small' + (i===state.fixedIndex ? ' active':'');
+      b.textContent = String.fromCharCode(65+i);
+      b.addEventListener('click', ()=>{
+        state.fixedIndex = i;
+        [...fixedVertexChips.children].forEach(c=>c.classList.remove('active'));
+        b.classList.add('active');
+        resetOrbit();
+      });
+      fixedVertexChips.appendChild(b);
+    }
+  }
+
+  const RULE_LABELS = {random:'true random', norepeat:'never repeat last', norepeat2:'never repeat last 2', fixed:'always the same vertex'};
+  ruleChips.querySelectorAll('[data-rule]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.rule = btn.dataset.rule;
+      ruleChips.querySelectorAll('[data-rule]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      fixedVertexField.style.display = state.rule==='fixed' ? 'block' : 'none';
+      statRule.textContent = RULE_LABELS[state.rule];
+      resetOrbit();
+    });
+  });
+
+  ratioSlider.addEventListener('input', ()=>{
+    state.ratio = parseFloat(ratioSlider.value);
+    ratioReadout.textContent = state.ratio.toFixed(2);
+    statRatio.textContent = state.ratio.toFixed(2);
+    resetOrbit();
+  });
+  hideStartCb.addEventListener('change', ()=>{ state.hideStart = hideStartCb.checked; });
+  showMoveCb.addEventListener('change', ()=>{ state.showMove = showMoveCb.checked; drawIndicator(); });
+
+  document.getElementById('playBtn').addEventListener('click', ()=> setRunning(!running));
+  document.getElementById('stepBtn').addEventListener('click', ()=>{ setRunning(false); doOneStep(); drawIndicator(); updateStats(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=> resetOrbit());
+
+  wrap.addEventListener('click', e=>{
+    const rect = wrap.getBoundingClientRect();
+    const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+    const [wx,wy] = toWorld(sx,sy);
+    cur = {x:wx, y:wy};
+    lastPicks = []; totalIter = 0; plotted = 0; lastMove=null;
+    clearFg(); clearInd(); updateStats();
+  });
+
+  // ---------- presets ----------
+  const PRESETS = [
+    {emoji:'🎯', title:'Always pick the same vertex', desc:'Watch the point march straight toward one corner — and stop.', apply:()=>({n:3, ratio:0.5, rule:'fixed', fixedIndex:0})},
+    {emoji:'🌟', title:'True random — the Sierpinski triangle', desc:'Out of a random mess, the classic fractal appears.', apply:()=>({n:3, ratio:0.5, rule:'random'})},
+    {emoji:'🟦', title:'Square, true random — fills in solid', desc:'Four corners at ratio 1/2 tile the square perfectly. No gaps, no fractal.', apply:()=>({n:4, ratio:0.5, rule:'random'})},
+    {emoji:'🧩', title:'Square, never repeat — a fractal appears!', desc:'One small restriction, and a hidden pattern emerges from the solid square.', apply:()=>({n:4, ratio:0.5, rule:'norepeat'})},
+    {emoji:'🔷', title:'Pentagon, true random', desc:'Five corners, plain randomness — mostly just fills in.', apply:()=>({n:5, ratio:0.5, rule:'random'})},
+    {emoji:'💠', title:'Pentagon, never repeat', desc:'Same pentagon, same ratio — ban repeats and a delicate five-fold fractal appears.', apply:()=>({n:5, ratio:0.5, rule:'norepeat'})},
+    {emoji:'⬡', title:'Hexagon, skip the last two', desc:'Banning the previous two vertices reveals structure even in a hexagon.', apply:()=>({n:6, ratio:0.5, rule:'norepeat2'})},
+    {emoji:'🔬', title:'Tiny ratio', desc:'Moving just 15% of the way each time — a fractal that hugs close to where you started.', apply:()=>({n:3, ratio:0.15, rule:'random'})},
+    {emoji:'🚀', title:'Big ratio', desc:'Jumping 85% of the way each time — a sparser, spikier triangle.', apply:()=>({n:3, ratio:0.85, rule:'random'})},
+  ];
+
+  const tryGrid = document.getElementById('tryGrid');
+  PRESETS.forEach(p=>{
+    const card = document.createElement('div');
+    card.className = 'try-card';
+    card.innerHTML = `<div class="emoji">${p.emoji}</div><h4>${p.title}</h4><p>${p.desc}</p>`;
+    card.addEventListener('click', ()=>{
+      const cfg = p.apply();
+      state.n = cfg.n; state.ratio = cfg.ratio; state.rule = cfg.rule;
+      state.fixedIndex = cfg.fixedIndex || 0;
+      // sync UI
+      [...vertexChips.children].forEach(c=>c.classList.toggle('active', parseInt(c.textContent,10)===cfg.n));
+      ruleChips.querySelectorAll('[data-rule]').forEach(b=>b.classList.toggle('active', b.dataset.rule===cfg.rule));
+      fixedVertexField.style.display = cfg.rule==='fixed' ? 'block' : 'none';
+      ratioSlider.value = cfg.ratio;
+      ratioReadout.textContent = cfg.ratio.toFixed(2);
+      statRatio.textContent = cfg.ratio.toFixed(2);
+      statRule.textContent = RULE_LABELS[cfg.rule];
+      rebuildShape();
+      buildFixedVertexChips();
+      setRunning(true);
+      if(window.matchMedia('(max-width:900px)').matches){
+        document.getElementById('canvasWrap').scrollIntoView({behavior:'smooth', block:'center'});
+      }
+    });
+    tryGrid.appendChild(card);
+  });
+
+  // init
+  function init(){
+    buildVertexChips();
+    rebuildShape();
+    resize();
+  }
+  window.addEventListener('load', init);
+  if(document.readyState === 'complete') init();
+})();
+</script>
+</body>
+</html>

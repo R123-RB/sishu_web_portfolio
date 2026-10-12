@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Generalized Sierpinski Triangles &amp; Carpets — z² + λ/zⁿ</title>
+<style>
+  :root{
+    --bg:#030705; --panel:#081008; --panel2:#0c1810; --ink:#d8ffe0; --muted:#5f9c5a;
+    --neon:#39ff14; --magenta:#ff2ec4; --border:#163a12;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; padding:22px; background:var(--bg); color:var(--ink); font-family:"Courier New",monospace;}
+  h1{font-size:1.16rem; font-weight:700; margin:0 0 4px 0; color:var(--neon); text-shadow:0 0 8px rgba(57,255,20,0.5);}
+  .sub{color:var(--muted); font-size:.85rem; margin-bottom:14px; max-width:900px; line-height:1.55;}
+  .layout{display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start;}
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:13px; box-shadow:0 0 18px rgba(57,255,20,0.08);}
+  canvas{border-radius:5px; display:block; cursor:crosshair; background:#020402;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:9px; align-items:center;}
+  button{background:var(--panel2); color:var(--neon); border:1px solid var(--border); border-radius:5px; padding:6px 10px; font-size:.74rem; cursor:pointer; font-family:inherit;}
+  button:hover{border-color:var(--neon); box-shadow:0 0 8px rgba(57,255,20,0.35);}
+  button.active{background:var(--neon); color:#020402;}
+  input[type=range]{width:230px;}
+  .stat{font-size:.78rem; color:var(--muted); margin-top:9px; line-height:1.6; max-width:340px;}
+  .stat b{color:var(--ink);}
+  .legend{font-size:.7rem; color:var(--muted); margin-top:8px; line-height:1.5;}
+  .sw{display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:6px; vertical-align:-1px;}
+  .caption{font-size:.76rem; color:var(--muted); margin-top:8px; max-width:360px; line-height:1.5; border-left:2px solid var(--border); padding-left:9px;}
+</style>
+</head>
+<body>
+
+<h1>JULIA SETS OF f<sub>λ</sub>(z) = z² + λ/zⁿ — PLATES 26–27</h1>
+<div class="sub">
+$n=1$: Devaney's generalized <b>Sierpinski triangle</b> family (Plate 26). $n=2$: the <b>Sierpinski carpet / "square"</b> family
+(Plate 27). Both are rational maps with a pole at $z=0$; iterating a grid of starting points shows two basins — escaping to
+$\infty$ (green, banded by speed) and attracted to a bounded cycle away from the pole (magenta) — with the actual Julia set
+sitting as the thin unlit lace between them. Drag to zoom.
+</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <canvas id="jCanvas" width="420" height="420"></canvas>
+    <div class="row">
+      <button class="active" id="triBtn">n=1 — triangle family</button>
+      <button id="sqBtn">n=2 — carpet family</button>
+    </div>
+    <div class="row">
+      <button id="p1">λ = −6</button>
+      <button id="p2">λ = −54</button>
+      <button id="p3">λ = −0.36</button>
+      <button id="p4">λ = −0.27</button>
+      <button id="resetBtn">↺ reset view</button>
+    </div>
+    <div class="row">
+      <span style="font-size:.78rem;color:var(--muted);">λ =</span>
+      <input type="range" id="lamSlider" min="-1000" max="0" value="-60">
+      <span id="lamVal" style="font-size:.8rem;">−6.00</span>
+    </div>
+  </div>
+
+  <div class="panel" style="max-width:340px;">
+    <div class="stat" id="readout"></div>
+    <div class="legend">
+      <div><span class="sw" style="background:#39ff14;"></span>escapes to ∞ (or through the pole at 0)</div>
+      <div><span class="sw" style="background:var(--magenta);"></span>attracted to a bounded cycle</div>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+</div>
+
+<script>
+function cmul(a,b){return{re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re};}
+function cdiv(a,b){const d=b.re*b.re+b.im*b.im; return{re:(a.re*b.re+a.im*b.im)/d, im:(a.im*b.re-a.re*b.im)/d};}
+function cabs2(a){return a.re*a.re+a.im*a.im;}
+
+const ESC=1600, POLE2=1e-10, MAXITER=55;
+let n = 1; // 1 = triangle family, 2 = carpet family
+
+function zn(z){ return n===1 ? z : cmul(z,z); }
+function f(z, lambda){
+  const z2 = cmul(z,z);
+  const term = cdiv(lambda, zn(z));
+  return { re:z2.re+term.re, im:z2.im+term.im };
+}
+
+function escapeIter(z, lambda){
+  for(let i=0;i<MAXITER;i++){
+    const r2=cabs2(z);
+    if(r2>ESC || r2<POLE2) return i;
+    z = f(z,lambda);
+  }
+  return -1;
+}
+function colorFor(iter){
+  if(iter<0) return [255,46,196];
+  const t = Math.sqrt(iter/MAXITER);
+  return [Math.floor(6+t*40), Math.floor(30+t*225), Math.floor(4+t*30)];
+}
+
+const jCanvas=document.getElementById('jCanvas'), jctx=jCanvas.getContext('2d');
+const JSZ=jCanvas.width;
+const DEFAULT_BOUNDS = { reMin:-4, reMax:4, imMin:-4, imMax:4 };
+let bounds = {...DEFAULT_BOUNDS};
+let lambda = { re:-6, im:0 };
+
+function render(){
+  const img=jctx.createImageData(JSZ,JSZ);
+  for(let px=0;px<JSZ;px++){
+    const zre=bounds.reMin+(px/JSZ)*(bounds.reMax-bounds.reMin);
+    for(let py=0;py<JSZ;py++){
+      const zim=bounds.imMin+(py/JSZ)*(bounds.imMax-bounds.imMin);
+      const iter = escapeIter({re:zre,im:zim}, lambda);
+      const [r,g,b]=colorFor(iter);
+      const idx=(py*JSZ+px)*4;
+      img.data[idx]=r; img.data[idx+1]=g; img.data[idx+2]=b; img.data[idx+3]=255;
+    }
+  }
+  jctx.putImageData(img,0,0);
+  document.getElementById('readout').innerHTML =
+    'n = <b>' + n + '</b> · λ = <b>' + lambda.re.toFixed(3) + (lambda.im>=0?' + ':' − ') + Math.abs(lambda.im).toFixed(3) + 'i</b>';
+}
+
+function toZ(x,y){ return { re:bounds.reMin+(x/JSZ)*(bounds.reMax-bounds.reMin), im:bounds.imMin+(y/JSZ)*(bounds.imMax-bounds.imMin) }; }
+
+let dragStart=null;
+jCanvas.addEventListener('mousedown',(e)=>{
+  const r=jCanvas.getBoundingClientRect();
+  dragStart={x:(e.clientX-r.left)/r.width*JSZ, y:(e.clientY-r.top)/r.height*JSZ};
+});
+jCanvas.addEventListener('mousemove',(e)=>{
+  if(!dragStart) return;
+  const r=jCanvas.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width*JSZ, y=(e.clientY-r.top)/r.height*JSZ;
+  render();
+  jctx.strokeStyle='#39ff14'; jctx.lineWidth=1.3;
+  jctx.strokeRect(Math.min(dragStart.x,x), Math.min(dragStart.y,y), Math.abs(x-dragStart.x), Math.abs(y-dragStart.y));
+});
+jCanvas.addEventListener('mouseup',(e)=>{
+  if(!dragStart) return;
+  const r=jCanvas.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width*JSZ, y=(e.clientY-r.top)/r.height*JSZ;
+  if(Math.hypot(x-dragStart.x,y-dragStart.y)>6){
+    const x0=Math.min(dragStart.x,x), x1=Math.max(dragStart.x,x);
+    const y0=Math.min(dragStart.y,y), y1=Math.max(dragStart.y,y);
+    const p0=toZ(x0,y0), p1=toZ(x1,y1);
+    bounds={reMin:p0.re,reMax:p1.re,imMin:p0.im,imMax:p1.im};
+    render();
+  }
+  dragStart=null;
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{ bounds={...DEFAULT_BOUNDS}; render(); });
+
+const captions = {
+  tri: 'Plate 26: for n=1, λ=−6 and λ=−54 both give Julia sets homeomorphic to the Sierpinski triangle — the three-fold "onion" of nested triangular rings around each hole is the signature.',
+  sq: 'Plate 27: for n=2, λ=−0.36 and λ=−0.27 give a "generalized" Sierpinski carpet — same idea, four-fold symmetric holes instead of three-fold, still homeomorphic to the true Sierpinski carpet.'
+};
+
+function setFamily(newN, defLambda, capKey){
+  n = newN;
+  lambda = { re: defLambda, im:0 };
+  bounds = {...DEFAULT_BOUNDS};
+  document.getElementById('lamSlider').min = newN===1 ? -1000 : -100;
+  document.getElementById('lamSlider').max = 0;
+  document.getElementById('lamSlider').value = defLambda*10;
+  document.getElementById('lamVal').textContent = defLambda.toFixed(2);
+  document.getElementById('caption').textContent = captions[capKey];
+  render();
+}
+
+document.getElementById('triBtn').addEventListener('click', (e)=>{
+  document.getElementById('sqBtn').classList.remove('active'); e.target.classList.add('active');
+  setFamily(1, -6, 'tri');
+});
+document.getElementById('sqBtn').addEventListener('click', (e)=>{
+  document.getElementById('triBtn').classList.remove('active'); e.target.classList.add('active');
+  setFamily(2, -0.36, 'sq');
+});
+document.getElementById('p1').addEventListener('click', ()=>{ setFamily(1,-6,'tri'); document.getElementById('triBtn').classList.add('active'); document.getElementById('sqBtn').classList.remove('active'); });
+document.getElementById('p2').addEventListener('click', ()=>{ setFamily(1,-54,'tri'); document.getElementById('triBtn').classList.add('active'); document.getElementById('sqBtn').classList.remove('active'); });
+document.getElementById('p3').addEventListener('click', ()=>{ setFamily(2,-0.36,'sq'); document.getElementById('sqBtn').classList.add('active'); document.getElementById('triBtn').classList.remove('active'); });
+document.getElementById('p4').addEventListener('click', ()=>{ setFamily(2,-0.27,'sq'); document.getElementById('sqBtn').classList.add('active'); document.getElementById('triBtn').classList.remove('active'); });
+
+document.getElementById('lamSlider').addEventListener('input', (e)=>{
+  const v = parseInt(e.target.value)/10;
+  lambda = { re:v, im:0 };
+  document.getElementById('lamVal').textContent = v.toFixed(2);
+  render();
+});
+
+setFamily(1, -6, 'tri');
+</script>
+
+</body>
+</html>

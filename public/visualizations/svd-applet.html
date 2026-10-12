@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVD Explorer — Rectangular Matrices</title>
+<style>
+:root{
+  --bg:#f0f4ff; --panel:#fff; --ink:#1a1f36; --muted:#6b7280;
+  --accent:#4f46e5; --red:#dc2626; --green:#16a34a; --blue:#2563eb;
+  --orange:#ea580c; --sigma-bg:#fee2e2; --sigma-diag:#dc2626;
+  --u-bg:#dbeafe; --v-bg:#dcfce7; --zero:#e5e7eb;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--ink); padding:24px 16px;}
+h1{text-align:center; font-size:1.6rem; margin-bottom:4px;}
+.subtitle{text-align:center; color:var(--muted); font-size:.92rem; margin-bottom:24px;}
+
+/* ——— top controls ——— */
+.controls{
+  display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
+  background:var(--panel); border-radius:14px; padding:18px 24px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07); margin-bottom:22px; max-width:900px; margin-left:auto; margin-right:auto;
+}
+.ctrl-group{display:flex; flex-direction:column; gap:4px; min-width:160px;}
+.ctrl-group label{font-size:.8rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);}
+.ctrl-row{display:flex; align-items:center; gap:8px;}
+.ctrl-row span{font-size:.95rem; font-weight:700; min-width:24px; text-align:right; color:var(--accent);}
+input[type=range]{flex:1; accent-color:var(--accent);}
+
+.btn-row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+button{
+  padding:8px 16px; border:none; border-radius:8px; font-size:.85rem;
+  font-weight:600; cursor:pointer; transition:opacity .15s;
+}
+button:hover{opacity:.85;}
+.btn-primary{background:var(--accent); color:#fff;}
+.btn-secondary{background:#e5e7eb; color:var(--ink);}
+.btn-download{background:var(--green); color:#fff;}
+
+/* ——— equation row ——— */
+.eq-wrap{
+  max-width:1100px; margin:0 auto 24px;
+  background:var(--panel); border-radius:14px; padding:20px 24px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07);
+}
+.eq-label{font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:10px; text-align:center;}
+.eq{display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;}
+.eq-op{font-size:1.5rem; font-weight:300; color:var(--muted);}
+
+/* ——— generic matrix ——— */
+.mat-block{display:flex; flex-direction:column; align-items:center; gap:4px;}
+.mat-title{font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);}
+.mat-size{font-size:.68rem; color:var(--muted);}
+.mat-grid{
+  display:inline-grid; border:2px solid #cbd5e1; border-radius:6px;
+  overflow:hidden; gap:1px; background:#cbd5e1;
+}
+.cell{
+  width:36px; height:30px; display:flex; align-items:center; justify-content:center;
+  font-size:.72rem; font-family:'Cascadia Code','Courier New',monospace;
+  font-weight:600; background:#fff; color:var(--ink);
+}
+/* colour themes */
+.cell.u-cell{background:var(--u-bg); color:var(--blue);}
+.cell.sigma-diag{background:var(--sigma-diag); color:#fff;}
+.cell.sigma-zero{background:var(--zero); color:#aaa; font-weight:400;}
+.cell.sigma-off{background:#fff; color:#ddd; font-weight:400;}
+.cell.v-active{background:var(--v-bg); color:var(--green);}
+.cell.v-inactive{background:#fff4ed; color:var(--orange); position:relative;}
+.cell.v-inactive::after{
+  content:''; position:absolute; inset:2px;
+  background: linear-gradient(135deg, transparent 45%, var(--orange) 45%, var(--orange) 55%, transparent 55%),
+              linear-gradient(225deg, transparent 45%, var(--orange) 45%, var(--orange) 55%, transparent 55%);
+}
+.cell.a-cell{background:#f8fafc; color:var(--ink);}
+
+/* ——— info panel ——— */
+.info{
+  max-width:900px; margin:0 auto 20px;
+  background:var(--panel); border-radius:14px; padding:18px 24px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07); font-size:.9rem; line-height:1.7;
+}
+.info strong{color:var(--accent);}
+.info .tag{
+  display:inline-block; padding:1px 7px; border-radius:4px; font-size:.75rem;
+  font-weight:700; margin-right:4px;
+}
+.tag-u{background:var(--u-bg); color:var(--blue);}
+.tag-s{background:var(--sigma-diag); color:#fff;}
+.tag-v{background:var(--v-bg); color:var(--green);}
+.tag-vi{background:#fff4ed; color:var(--orange);}
+
+/* ——— sigma detail ——— */
+.sigma-vals{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+.sigma-chip{
+  padding:4px 10px; border-radius:6px; background:var(--sigma-bg);
+  color:var(--red); font-size:.82rem; font-weight:700;
+  font-family:'Cascadia Code','Courier New',monospace;
+}
+
+footer{text-align:center; color:var(--muted); font-size:.78rem; margin-top:24px;}
+</style>
+</head>
+<body>
+
+<h1>SVD Explorer — Rectangular Matrices</h1>
+<div class="subtitle">No square matrix? No problem! &nbsp;A = U Σ Vᵀ works for <em>any</em> shape.</div>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="ctrl-group">
+    <label>Rows (m)</label>
+    <div class="ctrl-row">
+      <input type="range" id="slM" min="2" max="6" step="1" value="4">
+      <span id="mVal">4</span>
+    </div>
+  </div>
+  <div class="ctrl-group">
+    <label>Cols (n)</label>
+    <div class="ctrl-row">
+      <input type="range" id="slN" min="2" max="8" step="1" value="6">
+      <span id="nVal">6</span>
+    </div>
+  </div>
+  <div class="ctrl-group">
+    <label>Rank (r)</label>
+    <div class="ctrl-row">
+      <input type="range" id="slR" min="1" max="4" step="1" value="4">
+      <span id="rVal">4</span>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn-secondary" id="btnReset">Reset</button>
+    <button class="btn-download" id="btnDownload">⬇ Download app</button>
+  </div>
+</div>
+
+<!-- Equation -->
+<div class="eq-wrap">
+  <div class="eq-label">A = U · Σ · Vᵀ &nbsp;—&nbsp; colour shows which parts are active</div>
+  <div class="eq" id="eqRow"></div>
+</div>
+
+<!-- Info box -->
+<div class="info" id="infoBox"></div>
+
+<footer>Self-contained HTML — open in any browser, no internet needed.</footer>
+
+<script>
+// ——————————————————————————————————————
+// helpers
+// ——————————————————————————————————————
+const slM = document.getElementById('slM');
+const slN = document.getElementById('slN');
+const slR = document.getElementById('slR');
+const mVal = document.getElementById('mVal');
+const nVal = document.getElementById('nVal');
+const rVal = document.getElementById('rVal');
+const eqRow = document.getElementById('eqRow');
+const infoBox = document.getElementById('infoBox');
+
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+function buildMatrix(rows, cols, cellClassFn, valueFn){
+  const grid = document.createElement('div');
+  grid.className='mat-grid';
+  grid.style.gridTemplateColumns = `repeat(${cols},auto)`;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const d = document.createElement('div');
+      d.className='cell ' + cellClassFn(r,c);
+      d.textContent = valueFn(r,c);
+      grid.appendChild(d);
+    }
+  }
+  return grid;
+}
+
+function matBlock(title, sizeStr, rows, cols, cellClassFn, valueFn, extraNote){
+  const wrap = document.createElement('div');
+  wrap.className='mat-block';
+  const t = document.createElement('div'); t.className='mat-title'; t.textContent=title;
+  const s = document.createElement('div'); s.className='mat-size'; s.textContent=sizeStr;
+  wrap.appendChild(t);
+  if(extraNote){const n=document.createElement('div');n.className='mat-size';n.style.color=extraNote.color||'var(--muted)';n.textContent=extraNote.text;wrap.appendChild(n);}
+  wrap.appendChild(s);
+  wrap.appendChild(buildMatrix(rows,cols,cellClassFn,valueFn));
+  return wrap;
+}
+
+function op(txt){
+  const s=document.createElement('div'); s.className='eq-op'; s.textContent=txt; return s;
+}
+
+// ——————————————————————————————————————
+// render
+// ——————————————————————————————————————
+function render(){
+  const m = parseInt(slM.value);
+  const n = parseInt(slN.value);
+  const maxR = Math.min(m, n);
+  // clamp rank slider
+  slR.max = maxR;
+  let r = clamp(parseInt(slR.value), 1, maxR);
+  slR.value = r;
+
+  mVal.textContent = m;
+  nVal.textContent = n;
+  rVal.textContent = r;
+
+  // fake singular values
+  const sigmas = [];
+  for(let i=0;i<r;i++) sigmas.push(+(10 - i*2 + Math.random()).toFixed(1));
+  sigmas.sort((a,b)=>b-a);
+
+  eqRow.innerHTML='';
+
+  // ---- A (m×n) ----
+  eqRow.appendChild(
+    matBlock('A', `${m}×${n}`, m, n,
+      ()=>'a-cell',
+      (ri,ci)=> (ri===ci && ri<r) ? sigmas[ri].toFixed(0) : (ri===ci?'0':'·'))
+  );
+
+  eqRow.appendChild(op('='));
+
+  // ---- U (m×m) ----
+  eqRow.appendChild(
+    matBlock('U', `${m}×${m}`, m, m,
+      ()=>'u-cell',
+      (ri,ci)=>`u${ri+1}${ci+1}`)
+  );
+
+  eqRow.appendChild(op('·'));
+
+  // ---- Σ (m×n) ----
+  // sigma is m×n; diag entries up to rank r, rest zero
+  eqRow.appendChild(
+    matBlock('Σ', `${m}×${n}`, m, n,
+      (ri,ci)=>{
+        if(ri===ci && ri<r) return 'sigma-diag';
+        if(ri===ci) return 'sigma-zero';
+        return 'sigma-off';
+      },
+      (ri,ci)=>{
+        if(ri===ci && ri<r) return 'σ'+(ri+1);
+        if(ri===ci) return '0';
+        return '';
+      })
+  );
+
+  eqRow.appendChild(op('·'));
+
+  // ---- Vᵀ (n×n) ----
+  // rows 0..r-1 are active (green), rows r..n-1 are inactive (orange crossed)
+  eqRow.appendChild(
+    matBlock('Vᵀ', `${n}×${n}`, n, n,
+      (ri,ci)=> ri < r ? 'v-active' : 'v-inactive',
+      (ri,ci)=> ri < r ? `v${ri+1}` : '')
+  );
+
+  // ——— info box ———
+  const isSquare = m===n;
+  const tallOrWide = m>n ? 'tall (more rows than cols)' : m<n ? 'wide (more cols than rows)' : 'square';
+  const zeroRows = m > n ? (m-n) : 0;
+  const zeroCols = n > m ? (n-m) : 0;
+
+  infoBox.innerHTML = `
+    <p style="margin-bottom:10px">
+      <strong>A is a ${m}×${n} ${tallOrWide} matrix.</strong>
+      ${isSquare
+        ? 'Square matrices have the classic square U, Σ, Vᵀ decomposition.'
+        : m < n
+          ? `For a <em>wide</em> matrix (m&lt;n), Σ is padded with <strong>${zeroCols} column(s) of zeros</strong> on the right.
+             The last ${n-m} rows of <span class="tag tag-v">Vᵀ</span> (vectors
+             <span class="tag tag-vi">V${m+1}…V${n}</span>) are <strong>never touched</strong> in the product
+             because they multiply those zero columns — but they still complete the orthonormal basis of ℝⁿ.`
+          : `For a <em>tall</em> matrix (m&gt;n), Σ is padded with <strong>${zeroRows} row(s) of zeros</strong> at the bottom.`
+      }
+    </p>
+    <p style="margin-bottom:10px">
+      <span class="tag tag-u">U</span> is always <strong>${m}×${m}</strong> — orthonormal columns spanning ℝᵐ.<br>
+      <span class="tag tag-s">Σ</span> is always <strong>${m}×${n}</strong> — same shape as A, diagonal entries are singular values.<br>
+      <span class="tag tag-v">Vᵀ</span> is always <strong>${n}×${n}</strong> — orthonormal rows spanning ℝⁿ.
+    </p>
+    <p style="margin-bottom:10px">
+      <strong>Rank r = ${r}</strong> out of min(m,n) = ${maxR}.
+      The matrix has <strong>${r} non-zero singular value${r>1?'s':''}:</strong>
+    </p>
+    <div class="sigma-vals">
+      ${sigmas.map((v,i)=>`<div class="sigma-chip">σ${i+1} = ${v}</div>`).join('')}
+    </div>
+    ${r < maxR ? `<p style="margin-top:10px; color:var(--muted); font-size:.85rem;">
+      σ${r+1} … σ${maxR} are zero (rank-deficient matrix — try moving the rank slider!)
+    </p>` : ''}
+    <p style="margin-top:12px; font-size:.85rem; color:var(--muted);">
+      💡 Try changing m &amp; n to see how the zero padding adapts.
+      The orange ✕ marks the V-rows that are "invisible" to the product.
+    </p>
+  `;
+}
+
+// ——————————————————————————————————————
+// events
+// ——————————————————————————————————————
+[slM, slN, slR].forEach(el=>el.addEventListener('input', render));
+
+document.getElementById('btnReset').addEventListener('click',()=>{
+  slM.value=4; slN.value=6; slR.value=4; render();
+});
+
+document.getElementById('btnDownload').addEventListener('click',()=>{
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const blob = new Blob([html],{type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'svd-rectangular-applet.html';
+  a.click();
+});
+
+render();
+</script>
+</body>
+</html>

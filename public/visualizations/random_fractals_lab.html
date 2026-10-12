@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Fractals Lab</title>
+<style>
+  :root{
+    --bg:#10121B; --panel:#171A26; --rule:#2B2F42; --text:#EDEDF4; --muted:#9498B3;
+    --target-fill:#E8A33D; --point:#FF6B5B; --current:#6FCF97;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding:32px 20px 60px;
+  }
+  .mono{ font-family:"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; letter-spacing:0.02em; }
+  .wrap{ max-width:1080px; margin:0 auto; }
+  h1{ font-family:Georgia,"Iowan Old Style","Times New Roman",serif; font-weight:400; font-size:1.95rem; margin:0 0 8px; }
+  header p{ color:var(--muted); max-width:700px; line-height:1.55; margin:0; font-size:0.96rem; }
+
+  .app{ display:flex; gap:34px; align-items:flex-start; margin-top:26px; }
+  @media (max-width:880px){ .app{ flex-direction:column; } }
+
+  .left{ flex:0 0 auto; width:min(460px,100%); }
+  #curve{ width:100%; aspect-ratio:1.5/1; display:block; border:1px solid var(--rule); background:var(--bg); }
+  .caption{ color:var(--muted); font-size:0.85rem; margin-top:10px; line-height:1.5; }
+
+  .legend{ display:flex; gap:18px; margin-top:16px; align-items:center; }
+  .legend-item{ text-align:center; }
+  .legend-item canvas{ border:1px solid var(--rule); }
+  .legend-item div.lab{ color:var(--muted); font-size:0.8rem; margin-top:4px; }
+
+  .right{ flex:1 1 380px; min-width:300px; }
+  .section{ border-top:1px solid var(--rule); padding:16px 0; }
+  .section:first-child{ border-top:none; padding-top:0; }
+  .section h2{ font-size:0.72rem; font-weight:600; color:var(--muted); margin:0 0 12px; text-transform:uppercase; letter-spacing:0.08em; }
+
+  .tabs{ display:flex; gap:8px; }
+  .tabs button{
+    flex:1; background:var(--panel); border:1px solid var(--rule); color:var(--text);
+    padding:10px 8px; font-size:0.86rem; cursor:pointer; border-radius:2px;
+  }
+  .tabs button.active{ border-color:var(--target-fill); color:var(--target-fill); }
+  .tabs button:hover{ border-color:#565b7d; }
+
+  .modes{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px; }
+  .modes button{
+    background:var(--panel); border:1px solid var(--rule); color:var(--text);
+    padding:8px 10px; font-size:0.82rem; cursor:pointer; border-radius:2px; text-align:left;
+  }
+  .modes button:hover{ border-color:#565b7d; }
+  .modes button.active{ border-color:var(--target-fill); color:var(--target-fill); }
+
+  .row{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .row label{ width:120px; color:var(--muted); font-size:0.87rem; flex:0 0 auto; }
+  .row input[type=range]{ flex:1; accent-color:var(--target-fill); }
+  .row .val{ width:50px; text-align:right; font-size:0.85rem; }
+
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  button.action{
+    background:none; border:1px solid var(--rule); color:var(--text);
+    padding:9px 16px; font-size:0.88rem; cursor:pointer; border-radius:2px;
+  }
+  button.action:hover{ border-color:#565b7d; background:#1D2032; }
+
+  .stat{ font-size:0.92rem; color:var(--muted); margin-top:10px; }
+  .stat b{ color:var(--text); }
+  .notes{ font-size:0.88rem; color:var(--muted); line-height:1.6; }
+  .notes b{ color:#c7c9de; }
+  .hidden{ display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Random Fractals Lab</h1>
+    <p>Two ways to build a fractal curve from H/T bends: <b style="color:#c7c9de">deterministically</b> — the same rule every time, like always-H or alternating — or <b style="color:#c7c9de">stochastically</b> — a coin flip at every segment, and the coin doesn't have to be fair. On top of that, H and T don't have to bend by the same angle.</p>
+  </header>
+
+  <div class="app">
+    <div class="left">
+      <canvas id="curve" width="460" height="306"></canvas>
+      <div class="caption" id="caption"></div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <canvas id="legH" width="90" height="60"></canvas>
+          <div class="lab">H bend</div>
+        </div>
+        <div class="legend-item">
+          <canvas id="legT" width="90" height="60"></canvas>
+          <div class="lab">T bend</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="section">
+        <h2>Kind of fractal</h2>
+        <div class="tabs" id="tabs">
+          <button data-tab="det">Deterministic</button>
+          <button data-tab="stoch">Random / stochastic</button>
+        </div>
+
+        <div id="detPanel" class="modes" style="margin-top:12px;"></div>
+
+        <div id="stochPanel" class="hidden">
+          <div class="row" style="margin-top:12px;">
+            <label>P(heads)</label>
+            <input type="range" id="pSlider" min="0" max="100" step="1" value="50">
+            <span class="val mono" id="pVal">50%</span>
+          </div>
+          <button class="action" id="reflip">Flip new coins</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Level (n)</h2>
+        <div class="row">
+          <label>n = <span id="levelVal" class="mono">0</span></label>
+          <input type="range" id="levelSlider" min="0" max="12" step="1" value="0">
+        </div>
+        <div class="btnrow">
+          <button class="action" id="playBtn">Play through levels</button>
+          <button class="action" id="resetBtn">Reset to n=0</button>
+        </div>
+        <div class="stat">Segments at this level: <b class="mono" id="segCount">1</b></div>
+      </div>
+
+      <div class="section">
+        <h2>Bend angles</h2>
+        <div class="row">
+          <label>Angle for H</label>
+          <input type="range" id="angleHSlider" min="5" max="80" step="1" value="30">
+          <span class="val mono" id="angleHVal">30°</span>
+        </div>
+        <div class="row">
+          <label>Angle for T</label>
+          <input type="range" id="angleTSlider" min="5" max="80" step="1" value="30">
+          <span class="val mono" id="angleTVal">30°</span>
+        </div>
+      </div>
+
+      <div class="section notes">
+        <h2>The takeaway</h2>
+        <p>An <b>iterated deterministic</b> rule can produce a fractal — always-H with matched angles is just the Koch-style curve you've already seen. But an <b>iterated random</b> rule can produce a fractal too, and changing the coin's bias or making the two angles uneven opens up a much wider family of shapes than either fixed rule alone.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('curve');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  let level = 0, angleH = 30, angleT = 30, pHeads = 0.5, seed = Math.random()*1000;
+  let tab = 'det', detMode = 'allH';
+  let playing = false, playTimer = null;
+
+  function heightFromAngle(deg){ return 0.5*Math.tan(deg*Math.PI/180); }
+
+  function pseudo(a,b,c){
+    const v = Math.sin(a*12.9898 + b*78.233 + c*37.719)*43758.5453;
+    return v - Math.floor(v);
+  }
+
+  function bendSign(lvl, idx){
+    if(tab==='det'){
+      if(detMode==='allH') return 1;
+      if(detMode==='allT') return -1;
+      return ((lvl+idx)%2===0) ? 1 : -1; // alternating
+    }
+    return pseudo(seed, lvl, idx) < pHeads ? 1 : -1;
+  }
+
+  function buildCurve(maxLevel){
+    let pts = [{x:0,y:0},{x:1,y:0}];
+    for(let lvl=1; lvl<=maxLevel; lvl++){
+      const next = [pts[0]];
+      for(let i=0;i<pts.length-1;i++){
+        const p=pts[i], q=pts[i+1];
+        const mx=(p.x+q.x)/2, my=(p.y+q.y)/2;
+        const dx=q.x-p.x, dy=q.y-p.y, len=Math.hypot(dx,dy);
+        const nx=-dy/len, ny=dx/len;
+        const sign = bendSign(lvl,i);
+        const h = sign===1 ? heightFromAngle(angleH) : heightFromAngle(angleT);
+        const apex = { x: mx+sign*h*len*nx, y: my+sign*h*len*ny };
+        next.push(apex, q);
+      }
+      pts = next;
+    }
+    return pts;
+  }
+
+  function drawPath(canvasEl, canvasCtx, pts, strokeColor, lineWidth){
+    const cw=canvasEl.width, ch=canvasEl.height;
+    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+    pts.forEach(p=>{
+      if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x;
+      if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y;
+    });
+    const spanX=Math.max(maxX-minX,0.001), spanY=Math.max(maxY-minY,0.001);
+    const pad=0.12;
+    const scale=Math.min(cw/(spanX*(1+2*pad)), ch/(spanY*(1+2*pad)));
+    const cx0=(minX+maxX)/2, cy0=(minY+maxY)/2;
+    const toXY=(x,y)=>({px:cw/2+(x-cx0)*scale, py:ch/2-(y-cy0)*scale});
+    canvasCtx.clearRect(0,0,cw,ch);
+    canvasCtx.beginPath();
+    pts.forEach((p,i)=>{
+      const {px,py}=toXY(p.x,p.y);
+      if(i===0) canvasCtx.moveTo(px,py); else canvasCtx.lineTo(px,py);
+    });
+    canvasCtx.strokeStyle=strokeColor;
+    canvasCtx.lineWidth=lineWidth;
+    canvasCtx.lineJoin='round';
+    canvasCtx.stroke();
+  }
+
+  function render(){
+    const pts = buildCurve(level);
+    drawPath(canvas, ctx, pts, '#FF6B5B', 1.6);
+    document.getElementById('levelVal').textContent = level;
+    document.getElementById('levelSlider').value = level;
+    document.getElementById('segCount').textContent = Math.pow(2, level).toLocaleString();
+    const modeTxt = tab==='det'
+      ? ({allH:'all heads', allT:'all tails', alt:'alternating'}[detMode])
+      : ('random, P(heads) = '+Math.round(pHeads*100)+'%');
+    document.getElementById('caption').textContent =
+      'n = '+level+' — '+Math.pow(2,level).toLocaleString()+' segment'+(Math.pow(2,level)>1?'s':'')+', '+modeTxt+', angle H = '+angleH+'°, angle T = '+angleT+'°.';
+  }
+
+  function drawLegend(){
+    const hH = heightFromAngle(angleH), hT = heightFromAngle(angleT);
+    const up=[{x:0,y:0},{x:0.5,y:hH},{x:1,y:0}];
+    const down=[{x:0,y:0},{x:0.5,y:-hT},{x:1,y:0}];
+    drawPath(document.getElementById('legH'), legHCtx, up, '#EDEDF4', 1.6);
+    drawPath(document.getElementById('legT'), legTCtx, down, '#EDEDF4', 1.6);
+  }
+  const legHCtx = document.getElementById('legH').getContext('2d');
+  const legTCtx = document.getElementById('legT').getContext('2d');
+
+  document.getElementById('levelSlider').addEventListener('input', e=>{ level=parseInt(e.target.value,10); render(); });
+  document.getElementById('angleHSlider').addEventListener('input', e=>{
+    angleH=parseInt(e.target.value,10);
+    document.getElementById('angleHVal').textContent = angleH+'°';
+    render(); drawLegend();
+  });
+  document.getElementById('angleTSlider').addEventListener('input', e=>{
+    angleT=parseInt(e.target.value,10);
+    document.getElementById('angleTVal').textContent = angleT+'°';
+    render(); drawLegend();
+  });
+  document.getElementById('pSlider').addEventListener('input', e=>{
+    pHeads = parseInt(e.target.value,10)/100;
+    document.getElementById('pVal').textContent = Math.round(pHeads*100)+'%';
+    render();
+  });
+  document.getElementById('reflip').addEventListener('click', ()=>{ seed=Math.random()*1000; render(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ stopPlay(); level=0; render(); });
+
+  function stopPlay(){
+    playing=false;
+    if(playTimer) clearInterval(playTimer);
+    document.getElementById('playBtn').textContent='Play through levels';
+  }
+  document.getElementById('playBtn').addEventListener('click', ()=>{
+    if(playing){ stopPlay(); return; }
+    playing=true;
+    document.getElementById('playBtn').textContent='Stop';
+    level=0; render();
+    playTimer=setInterval(()=>{
+      level++;
+      if(level>12){ stopPlay(); return; }
+      render();
+    }, 750);
+  });
+
+  // tabs
+  const tabsEl = document.getElementById('tabs');
+  Array.from(tabsEl.children).forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tab = btn.dataset.tab;
+      highlightTabs();
+      document.getElementById('detPanel').classList.toggle('hidden', tab!=='det');
+      document.getElementById('stochPanel').classList.toggle('hidden', tab!=='stoch');
+      render();
+    });
+  });
+  function highlightTabs(){
+    Array.from(tabsEl.children).forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  }
+
+  const DET_MODES = [
+    {id:'allH', label:'All heads'},
+    {id:'allT', label:'All tails'},
+    {id:'alt', label:'Alternating'}
+  ];
+  const detPanel = document.getElementById('detPanel');
+  DET_MODES.forEach(m=>{
+    const btn=document.createElement('button');
+    btn.textContent=m.label; btn.dataset.id=m.id;
+    btn.addEventListener('click', ()=>{ detMode=m.id; highlightDetModes(); render(); });
+    detPanel.appendChild(btn);
+  });
+  function highlightDetModes(){
+    Array.from(detPanel.children).forEach(b=>b.classList.toggle('active', b.dataset.id===detMode));
+  }
+
+  highlightTabs();
+  highlightDetModes();
+  drawLegend();
+  render();
+})();
+</script>
+</body>
+</html>

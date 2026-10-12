@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Binomial Distribution — Theory + Experiment</title>
+<style>
+:root{--g:#4f8b61;--gl:#eaf3e7;--p:#f4dce7;--pu:#e9e1f3;--o:#f9e2bf;--c:#fffdf2;--ink:#202020}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f7f3df,#edf4e9);color:var(--ink);font-family:"Segoe UI",Arial,sans-serif}
+.app{max-width:1250px;margin:auto;padding:18px}
+header{background:var(--gl);border:3px solid var(--g);border-radius:22px;padding:18px;text-align:center}
+h1{font:36px Georgia;margin:0}.sub{margin:7px 0 0}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.tabs button{border:0;border-radius:11px;padding:11px 17px;font-weight:700;cursor:pointer;background:#ddd}
+.tabs button.active{background:var(--g);color:white}
+.panel{display:none}.panel.active{display:block}
+.card{background:#fffdf9;border:2px solid #7b5a8d55;border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 5px 15px #0000000b}
+.card h2{margin:0 0 12px;font-size:23px}
+.motivation{background:var(--p)}.theory{background:var(--pu)}
+.question{font:25px Georgia;text-align:center;padding:16px;background:var(--o);border-radius:14px;margin:10px 0 16px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.flow div{padding:14px;border-radius:13px;text-align:center}
+.flow div:nth-child(1){background:var(--o)}.flow div:nth-child(2){background:var(--p)}.flow div:nth-child(3){background:var(--pu)}.flow div:nth-child(4){background:var(--gl)}
+.arrow{text-align:center;font-size:26px;padding-top:15px}
+.grid{display:grid;grid-template-columns:350px 1fr;gap:16px}
+.controls{background:var(--p)}label{display:flex;justify-content:space-between;font-weight:700;margin:13px 0 5px}
+input[type=range]{width:100%;accent-color:var(--g)}.v{font-size:19px;font-family:Georgia}
+.formula{font:19px Georgia;background:#fff;padding:14px;border-radius:12px;text-align:center;margin-top:15px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.metric{background:var(--o);padding:10px;border-radius:11px;text-align:center}.metric b{display:block;font-size:21px}
+canvas{width:100%;height:380px;background:white;border-radius:12px}
+.simgrid{display:grid;grid-template-columns:330px 1fr;gap:16px}.simcontrols{background:var(--gl)}
+button.run{background:var(--g);color:#fff;border:0;border-radius:10px;padding:12px 17px;font-weight:700;cursor:pointer;margin-top:12px;width:100%}
+.result{background:var(--o);padding:12px;border-radius:12px;margin-top:12px;line-height:1.5}
+table{border-collapse:collapse;width:100%;margin-top:12px;background:#fff}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:center}th{background:var(--pu)}
+.note{padding:13px;background:var(--gl);border:1px solid #9abd9f;border-radius:12px;line-height:1.55}
+.badge{display:inline-block;padding:4px 8px;border-radius:8px;background:var(--g);color:white;font-size:13px}
+@media(max-width:850px){.grid,.simgrid{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<h1>Binomial Distribution</h1>
+<div class="sub">From a real-world experiment → Bernoulli trials → Binomial model → probability</div>
+</header>
+
+<div class="tabs">
+<button class="active" onclick="tab('motivation',this)">💡 Motivation</button>
+<button onclick="tab('theory',this)">📘 Theory</button>
+<button onclick="tab('experiment',this)">🧪 Experiment</button>
+<button onclick="tab('explore',this)">📊 Explore PMF</button>
+</div>
+
+<section id="motivation" class="panel active">
+<div class="card motivation">
+<h2>Why do we need the Binomial Distribution?</h2>
+<div class="question">Suppose I repeat the same yes/no experiment many times. <br><b>How many successes should I expect?</b></div>
+<p>Imagine tossing a coin 10 times. Instead of asking what happens on each individual toss, we ask:</p>
+<ul>
+<li>What is the probability of getting <b>exactly 0, 1, 2, …, 10 heads</b>?</li>
+<li>What happens if the probability of a head is not 0.5?</li>
+<li>What happens when we repeat the experiment many times?</li>
+</ul>
+<p>The Binomial Distribution answers these questions when the experiment consists of a <b>fixed number of independent trials</b>, each having the same probability of success.</p>
+</div>
+
+<div class="card">
+<h2>From experiment to distribution</h2>
+<div class="flow">
+<div><b>1. Define one trial</b><br>Example: toss a coin once</div>
+<div><b>2. Define success</b><br>Head = success<br>Tail = failure</div>
+<div><b>3. Repeat n times</b><br>Keep p the same and make trials independent</div>
+<div><b>4. Count successes</b><br>X = number of successes</div>
+</div>
+<div class="note" style="margin-top:15px">
+So if each trial has success probability <b>p</b>, and we perform <b>n</b> independent trials, then the count of successes <b>X</b> follows a Binomial Distribution:
+<center><b>X ~ Binomial(n,p)</b></center>
+</div>
+</div>
+
+<div class="card">
+<h2>🎯 A concrete example</h2>
+<p><b>Quality control:</b> Suppose 10 components are tested. Historical data says each component has a 10% probability of being defective.</p>
+<p>Let “defective” = success. Then:</p>
+<div class="formula">n = 10, &nbsp; p = 0.10, &nbsp; X = number of defective components</div>
+<p>Now we can ask: <b>What is P(X = 2)? What is the expected number of defective components?</b></p>
+<p>The same mathematical structure appears in coin tossing, pass/fail tests, customer conversion, reliability testing, medical screening, and many other settings.</p>
+</div>
+</section>
+
+<section id="theory" class="panel">
+<div class="card theory">
+<h2>📘 The Binomial Model</h2>
+<p>A random variable X is binomial when:</p>
+<ol>
+<li>There are a <b>fixed number n</b> of trials.</li>
+<li>Each trial has exactly <b>two outcomes</b>: success or failure.</li>
+<li>The probability of success is the same <b>p</b> on every trial.</li>
+<li>The trials are <b>independent</b>.</li>
+<li>X counts the number of successes.</li>
+</ol>
+<div class="formula">P(X=k) = C(n,k) p<sup>k</sup>(1-p)<sup>n-k</sup>, &nbsp; k=0,1,…,n</div>
+<p>Here <b>C(n,k)</b> counts how many different arrangements contain exactly k successes.</p>
+<div class="metrics">
+<div class="metric">Mean E(X)<b>np</b></div>
+<div class="metric">Variance Var(X)<b>np(1-p)</b></div>
+<div class="metric">MGF M(t)<b>(q+peᵗ)<sup>n</sup></b></div>
+</div>
+</div>
+<div class="card">
+<h2>🔎 Why does the formula look like this?</h2>
+<p>For one particular sequence containing k successes and n−k failures, independence gives</p>
+<div class="formula">p<sup>k</sup>(1−p)<sup>n−k</sup>.</div>
+<p>But the k successes can occur in many different positions. The number of such arrangements is</p>
+<div class="formula">C(n,k) = n! / [k!(n−k)!].</div>
+<p>Multiplying these two ingredients gives the binomial PMF.</p>
+</div>
+</section>
+
+<section id="experiment" class="panel">
+<div class="simgrid">
+<div class="card simcontrols">
+<h2>🧪 Virtual Experiment</h2>
+<p>Choose a trial probability and repeat the whole experiment many times. Each repetition records only the <b>number of successes</b>.</p>
+<label>Trials per experiment <span class="v" id="snv">10</span></label>
+<input id="sn" type="range" min="1" max="30" value="10">
+<label>Success probability p <span class="v" id="spv">0.50</span></label>
+<input id="sp" type="range" min="0" max="1" step=".01" value=".5">
+<label>Number of repeated experiments <span class="v" id="rv">1000</span></label>
+<input id="rep" type="range" min="10" max="5000" step="10" value="1000">
+<button class="run" onclick="simulate()">▶ Run Experiment</button>
+<div class="result" id="simResult">Run the experiment to compare the <b>experimental</b> frequencies with the <b>theoretical</b> binomial probabilities.</div>
+</div>
+<div class="card">
+<canvas id="simCanvas" width="850" height="390"></canvas>
+<div class="note" style="margin-top:12px">
+<b>What should students notice?</b><br>
+With only a few repetitions, the experimental histogram can look noisy. As the number of repetitions increases, it approaches the theoretical Binomial PMF. This is a visual demonstration of the idea behind the <b>law of large numbers</b>.
+</div>
+</div>
+</div>
+<div class="card">
+<h2>One experiment vs repeated experiments</h2>
+<table><tr><th>Level</th><th>Question</th><th>Mathematical object</th></tr>
+<tr><td>One trial</td><td>Success or failure?</td><td>Bernoulli trial</td></tr>
+<tr><td>n trials</td><td>How many successes?</td><td>Random variable X</td></tr>
+<tr><td>Many repetitions of n trials</td><td>How often does each k occur?</td><td>Binomial PMF</td></tr></table>
+</div>
+</section>
+
+<section id="explore" class="panel">
+<div class="grid">
+<div class="card controls">
+<h2>🎛️ Explore parameters</h2>
+<label>n <span class="v" id="nv">10</span></label>
+<input id="n" type="range" min="1" max="50" value="10">
+<label>p <span class="v" id="pv">0.50</span></label>
+<input id="p" type="range" min="0" max="1" step=".01" value=".5">
+<div class="formula">X ~ Binomial(n,p)<br><br>P(X=k)=C(n,k)p<sup>k</sup>(1-p)<sup>n-k</sup></div>
+<div class="metrics">
+<div class="metric">Mean<b id="mean">5.00</b></div>
+<div class="metric">Variance<b id="variance">2.50</b></div>
+<div class="metric">SD<b id="sd">1.58</b></div>
+</div>
+</div>
+<div class="card"><canvas id="chart" width="850" height="390"></canvas>
+<div class="note">Try <b>p = 0.5</b>, then p = 0.1 and p = 0.9. Increase n and observe how the shape changes.</div></div>
+</div>
+</section>
+</div>
+
+<script>
+function tab(id,btn){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');}
+function choose(n,k){if(k<0||k>n)return 0;k=Math.min(k,n-k);let r=1;for(let i=1;i<=k;i++)r*=((n-k+i)/i);return r}
+function pmf(n,p,k){return choose(n,k)*p**k*(1-p)**(n-k)}
+function drawCanvas(canvas,n,p,experimental=null){
+ let c=canvas.getContext('2d'),W=canvas.width,H=canvas.height;c.clearRect(0,0,W,H);
+ let left=55,right=20,top=45,bottom=55,cw=W-left-right,ch=H-top-bottom;
+ let theo=Array.from({length:n+1},(_,k)=>pmf(n,p,k)), ymax=experimental?Math.max(...theo,...experimental)*1.18:Math.max(...theo)*1.18;
+ c.font='bold 16px Arial';c.fillText(experimental?'Experiment vs Theory':'Binomial Probability Mass Function',left,25);
+ c.strokeStyle='#888';c.beginPath();c.moveTo(left,top);c.lineTo(left,top+ch);c.lineTo(W-right,top+ch);c.stroke();
+ let slot=cw/(n+1),bw=Math.max(3,slot*.62);
+ theo.forEach((v,k)=>{
+   let x=left+(k+.5)*slot-bw/2,h=v/ymax*ch;
+   c.fillStyle='#9a79aa';c.fillRect(x,top+ch-h,bw,h);
+   if(experimental){let eh=experimental[k]/ymax*ch;c.fillStyle='#4f8b61';c.fillRect(x+bw*.25,top+ch-eh,bw*.5,eh)}
+   if(n<=25||k%Math.ceil(n/25)===0){c.fillStyle='#222';c.font='12px Arial';c.fillText(k,x+bw/2-4,top+ch+18)}
+ });
+ c.font='13px Arial';c.fillText('k = number of successes',W/2-65,H-12);
+ c.save();c.translate(14,H/2+50);c.rotate(-Math.PI/2);c.fillText('Probability / relative frequency',0,0);c.restore();
+ if(experimental){c.fillStyle='#9a79aa';c.fillRect(W-180,18,12,12);c.fillStyle='#222';c.fillText('Theoretical PMF',W-162,29);c.fillStyle='#4f8b61';c.fillRect(W-180,35,12,12);c.fillStyle='#222';c.fillText('Experimental',W-162,46)}
+}
+function updateExplore(){
+ let n=+document.getElementById('n').value,p=+document.getElementById('p').value,q=1-p;
+ document.getElementById('nv').textContent=n;document.getElementById('pv').textContent=p.toFixed(2);
+ document.getElementById('mean').textContent=(n*p).toFixed(2);document.getElementById('variance').textContent=(n*p*q).toFixed(2);document.getElementById('sd').textContent=Math.sqrt(n*p*q).toFixed(2);
+ drawCanvas(document.getElementById('chart'),n,p);
+}
+function simulate(){
+ let n=+sn.value,p=+sp.value,R=+rep.value,counts=Array(n+1).fill(0);
+ for(let r=0;r<R;r++){let s=0;for(let i=0;i<n;i++)if(Math.random()<p)s++;counts[s]++}
+ let freq=counts.map(x=>x/R),theo=Array.from({length:n+1},(_,k)=>pmf(n,p,k));
+ drawCanvas(document.getElementById('simCanvas'),n,p,freq);
+ let maxDiff=Math.max(...freq.map((x,k)=>Math.abs(x-theo[k])));
+ let expMean=freq.reduce((s,x,k)=>s+k*x,0);
+ document.getElementById('simResult').innerHTML=`<b>${R.toLocaleString()}</b> repetitions completed.<br>Experimental mean ≈ <b>${expMean.toFixed(3)}</b>; theoretical mean = <b>${(n*p).toFixed(3)}</b>.<br>Largest absolute difference between experimental and theoretical probabilities ≈ <b>${maxDiff.toFixed(3)}</b>.`;
+}
+const n=document.getElementById('n'),p=document.getElementById('p');n.addEventListener('input',updateExplore);p.addEventListener('input',updateExplore);
+const sn=document.getElementById('sn'),sp=document.getElementById('sp'),rep=document.getElementById('rep');
+function simLabels(){snv.textContent=sn.value;spv.textContent=(+sp.value).toFixed(2);rv.textContent=rep.value}
+sn.addEventListener('input',simLabels);sp.addEventListener('input',simLabels);rep.addEventListener('input',simLabels);
+updateExplore();simLabels();
+</script>
+</body>
+</html>

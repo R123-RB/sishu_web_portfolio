@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Normal Distribution — Theory + Experiment</title>
+<style>
+:root{--g:#4f8b61;--gl:#eaf3e7;--p:#f4dce7;--pu:#e9e1f3;--o:#f9e2bf;--c:#fffdf2;--ink:#202020}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(135deg,#f7f3df,#edf4e9);color:var(--ink);font-family:"Segoe UI",Arial,sans-serif}
+.app{max-width:1250px;margin:auto;padding:18px}
+header{background:var(--gl);border:3px solid var(--g);border-radius:22px;padding:18px;text-align:center}
+h1{font:36px Georgia;margin:0}.sub{margin:7px 0 0}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.tabs button{border:0;border-radius:11px;padding:11px 17px;font-weight:700;cursor:pointer;background:#ddd}
+.tabs button.active{background:var(--g);color:white}
+.panel{display:none}.panel.active{display:block}
+.card{background:#fffdf9;border:2px solid #7b5a8d55;border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 5px 15px #0000000b}
+.card h2{margin:0 0 12px;font-size:23px}
+.motivation{background:var(--p)}.theory{background:var(--pu)}
+.question{font:25px Georgia;text-align:center;padding:16px;background:var(--o);border-radius:14px;margin:10px 0 16px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.flow div{padding:14px;border-radius:13px;text-align:center}
+.flow div:nth-child(1){background:var(--o)}.flow div:nth-child(2){background:var(--p)}
+.flow div:nth-child(3){background:var(--pu)}.flow div:nth-child(4){background:var(--gl)}
+.grid{display:grid;grid-template-columns:350px 1fr;gap:16px}
+.controls{background:var(--p)}
+label{display:flex;justify-content:space-between;font-weight:700;margin:13px 0 5px}
+input[type=range]{width:100%;accent-color:var(--g)}
+.v{font-size:19px;font-family:Georgia}
+input[type=number]{width:100%;padding:9px;border:1px solid #aaa;border-radius:8px;font-size:16px;margin-top:5px}
+.formula{font:18px Georgia;background:#fff;padding:14px;border-radius:12px;text-align:center;margin-top:15px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
+.metric{background:var(--o);padding:10px;border-radius:11px;text-align:center}
+.metric b{display:block;font-size:21px}
+canvas{width:100%;height:390px;background:white;border-radius:12px}
+.simgrid{display:grid;grid-template-columns:330px 1fr;gap:16px}
+.simcontrols{background:var(--gl)}
+button.run{background:var(--g);color:#fff;border:0;border-radius:10px;padding:12px 17px;font-weight:700;cursor:pointer;margin-top:12px;width:100%}
+button.secondary{background:#ddd;color:#222;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;margin-top:10px}
+.result{background:var(--o);padding:12px;border-radius:12px;margin-top:12px;line-height:1.5}
+table{border-collapse:collapse;width:100%;margin-top:12px;background:#fff}
+th,td{padding:8px;border-bottom:1px solid #ddd;text-align:center}th{background:var(--pu)}
+.note{padding:13px;background:var(--gl);border:1px solid #9abd9f;border-radius:12px;line-height:1.55}
+.areaBox{background:#fff;padding:13px;border-radius:12px;margin-top:12px;border:1px solid #ddd}
+.pill{display:inline-block;padding:4px 8px;border-radius:8px;background:var(--g);color:white;font-size:13px}
+@media(max-width:850px){.grid,.simgrid{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<h1>Normal Distribution</h1>
+<div class="sub">From real-world measurements → centre & spread → bell curve → probability</div>
+</header>
+
+<div class="tabs">
+<button class="active" onclick="tab('motivation',this)">💡 Motivation</button>
+<button onclick="tab('theory',this)">📘 Theory</button>
+<button onclick="tab('experiment',this)">🧪 Experiment</button>
+<button onclick="tab('explore',this)">📊 Explore the Bell Curve</button>
+</div>
+
+<section id="motivation" class="panel active">
+<div class="card motivation">
+<h2>Why do we need the Normal Distribution?</h2>
+<div class="question">Many measurements cluster around an average.<br><b>How can we describe their centre, spread and probabilities?</b></div>
+<p>Imagine measuring the heights of many students. Most observations tend to lie near the average, while fewer observations occur far away from it.</p>
+<ul>
+<li>Where is the <b>centre</b> of the data?</li>
+<li>How much <b>spread</b> is there around the mean?</li>
+<li>What proportion of observations lies between two values?</li>
+</ul>
+<p>The Normal Distribution provides a smooth, symmetric model for many naturally occurring measurements and for the behaviour of sample means under common conditions.</p>
+</div>
+
+<div class="card">
+<h2>From data to a distribution</h2>
+<div class="flow">
+<div><b>1. Collect data</b><br>Measure heights, scores, errors, etc.</div>
+<div><b>2. Find the centre</b><br>Mean μ</div>
+<div><b>3. Measure spread</b><br>Standard deviation σ</div>
+<div><b>4. Model the data</b><br>X ~ Normal(μ, σ²)</div>
+</div>
+<div class="note" style="margin-top:15px">
+For a normal random variable <b>X</b>, the distribution is determined by two parameters:
+<center><b>Mean μ = centre &nbsp;&nbsp; | &nbsp;&nbsp; Standard deviation σ = spread</b></center>
+</div>
+</div>
+
+<div class="card">
+<h2>🎯 A concrete example</h2>
+<p><b>Exam scores:</b> Suppose scores are approximately Normal with mean 70 and standard deviation 10.</p>
+<div class="formula">μ = 70, &nbsp; σ = 10, &nbsp; X = exam score</div>
+<p>We can ask: <b>What fraction of students score between 60 and 80? What is the probability of a score above 90?</b></p>
+<p>The same ideas are useful for measurement errors, biological measurements, manufacturing dimensions, test scores, sensor noise and many other settings.</p>
+</div>
+</section>
+
+<section id="theory" class="panel">
+<div class="card theory">
+<h2>📘 The Normal Model</h2>
+<p>A Normal distribution is continuous, symmetric and bell-shaped. Its location and spread are determined by:</p>
+<ol>
+<li><b>μ</b> is the mean and locates the centre of the curve.</li>
+<li><b>σ</b> is the standard deviation and controls the width.</li>
+<li>The total area under the density curve is <b>1</b>.</li>
+<li>The curve is symmetric about <b>x = μ</b>.</li>
+<li>For a continuous variable, probability corresponds to <b>area under the curve</b>.</li>
+</ol>
+<div class="formula">
+f(x)= 1/(σ√(2π)) · exp[−(x−μ)²/(2σ²)]
+</div>
+<div class="metrics">
+<div class="metric">Mean μ<b id="theoryMean">μ</b></div>
+<div class="metric">Variance σ²<b id="theoryVar">σ²</b></div>
+<div class="metric">SD σ<b id="theorySD">σ</b></div>
+</div>
+</div>
+
+<div class="card">
+<h2>🔎 The z-score: standardising a value</h2>
+<div class="formula">z = (x − μ) / σ</div>
+<p>A z-score tells us how many standard deviations a value is above or below the mean.</p>
+<table>
+<tr><th>Value</th><th>Relationship to μ</th><th>z-score</th></tr>
+<tr><td>x = μ</td><td>At the mean</td><td>0</td></tr>
+<tr><td>x = μ + σ</td><td>1 SD above</td><td>+1</td></tr>
+<tr><td>x = μ − 2σ</td><td>2 SD below</td><td>−2</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>📏 The 68–95–99.7 rule</h2>
+<div class="note">
+For a Normal distribution, approximately <b>68%</b> of observations lie within 1σ of μ,
+<b>95%</b> within 2σ, and <b>99.7%</b> within 3σ.
+</div>
+</div>
+</section>
+
+<section id="experiment" class="panel">
+<div class="simgrid">
+<div class="card simcontrols">
+<h2>🧪 Virtual Experiment</h2>
+<p>Generate repeated observations from a Normal distribution and compare the experimental histogram with the theoretical bell curve.</p>
+
+<label>Mean μ <span class="v" id="emu">70.0</span></label>
+<input id="simMu" type="range" min="20" max="120" step=".5" value="70">
+
+<label>Standard deviation σ <span class="v" id="esig">10.0</span></label>
+<input id="simSigma" type="range" min="1" max="25" step=".5" value="10">
+
+<label>Number of observations <span class="v" id="erv">2000</span></label>
+<input id="simN" type="range" min="100" max="10000" step="100" value="2000">
+
+<button class="run" onclick="simulate()">▶ Generate Data</button>
+<div class="result" id="simResult">Generate data to compare the <b>experimental histogram</b> with the <b>theoretical Normal curve</b>.</div>
+</div>
+
+<div class="card">
+<canvas id="simCanvas" width="850" height="390"></canvas>
+<div class="note" style="margin-top:12px">
+<b>What should students notice?</b><br>
+As the number of generated observations increases, the histogram becomes closer to the smooth Normal density. The sample mean and sample standard deviation also move closer to the chosen μ and σ.
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>One observation vs distribution</h2>
+<table>
+<tr><th>Level</th><th>Question</th><th>Mathematical idea</th></tr>
+<tr><td>One observation</td><td>Where is x relative to μ?</td><td>z-score</td></tr>
+<tr><td>Many observations</td><td>How are values distributed?</td><td>Normal model</td></tr>
+<tr><td>Probability</td><td>What fraction lies in an interval?</td><td>Area under curve</td></tr>
+</table>
+</div>
+</section>
+
+<section id="explore" class="panel">
+<div class="grid">
+<div class="card controls">
+<h2>🎛️ Explore μ and σ</h2>
+
+<label>Mean μ <span class="v" id="muv">70.0</span></label>
+<input id="mu" type="range" min="20" max="120" step=".5" value="70">
+
+<label>Standard deviation σ <span class="v" id="sigv">10.0</span></label>
+<input id="sig" type="range" min="1" max="25" step=".5" value="10">
+
+<div class="formula">X ~ Normal(μ, σ²)<br><br>
+f(x)=1/(σ√(2π)) exp[−(x−μ)²/(2σ²)]</div>
+
+<div class="metrics">
+<div class="metric">Mean<b id="mean">70.00</b></div>
+<div class="metric">Variance<b id="variance">100.00</b></div>
+<div class="metric">SD<b id="sd">10.00</b></div>
+</div>
+
+<div class="areaBox">
+<b>Find probability between two values</b>
+<label style="margin-top:10px">Lower x <span class="v" id="xlv">60.0</span></label>
+<input id="xl" type="range" min="20" max="120" step=".5" value="60">
+<label>Upper x <span class="v" id="xuv">80.0</span></label>
+<input id="xu" type="range" min="20" max="120" step=".5" value="80">
+<div class="result" id="probResult"></div>
+</div>
+</div>
+
+<div class="card">
+<canvas id="chart" width="850" height="390"></canvas>
+<div class="note">Move μ to shift the curve left/right. Increase σ to make the curve wider and lower; decrease σ to make it narrower and taller. The shaded area represents the probability between the selected lower and upper values.</div>
+</div>
+</div>
+</section>
+
+</div>
+
+<script>
+function tab(id,btn){
+document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+btn.classList.add('active');
+}
+
+function erf(x){
+const sign=x<0?-1:1;
+x=Math.abs(x);
+const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+const t=1/(1+p*x);
+const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+return sign*y;
+}
+function normalCDF(x,mu,sigma){
+return 0.5*(1+erf((x-mu)/(sigma*Math.sqrt(2))));
+}
+function normalPDF(x,mu,sigma){
+return Math.exp(-0.5*Math.pow((x-mu)/sigma,2))/(sigma*Math.sqrt(2*Math.PI));
+}
+function probBetween(a,b,mu,sigma){
+if(a>b){const t=a;a=b;b=t;}
+return Math.max(0,normalCDF(b,mu,sigma)-normalCDF(a,mu,sigma));
+}
+
+function drawNormal(canvas,mu,sigma,lower=null,upper=null,experimental=null){
+const c=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+c.clearRect(0,0,W,H);
+const left=58,right=22,top=40,bottom=55,cw=W-left-right,ch=H-top-bottom;
+const xmin=mu-4*sigma,xmax=mu+4*sigma;
+let ymax=normalPDF(mu,mu,sigma)*1.22;
+if(experimental){
+for(const bin of experimental) ymax=Math.max(ymax,bin.density);
+ymax*=1.08;
+}
+const X=x=>left+(x-xmin)/(xmax-xmin)*cw;
+const Y=y=>top+ch-(y/ymax)*ch;
+
+c.strokeStyle='#888';c.lineWidth=1;
+c.beginPath();c.moveTo(left,top+ch);c.lineTo(W-right,top+ch);c.moveTo(left,top);c.lineTo(left,top+ch);c.stroke();
+
+if(lower!==null&&upper!==null&&upper>lower){
+c.beginPath();
+c.moveTo(X(lower),top+ch);
+for(let i=0;i<=240;i++){
+const x=lower+(upper-lower)*i/240;
+c.lineTo(X(x),Y(normalPDF(x,mu,sigma)));
+}
+c.lineTo(X(upper),top+ch);c.closePath();
+c.fillStyle='#f1c27d';c.fill();
+}
+
+c.beginPath();
+for(let i=0;i<=500;i++){
+const x=xmin+(xmax-xmin)*i/500;
+const y=normalPDF(x,mu,sigma);
+if(i===0)c.moveTo(X(x),Y(y));else c.lineTo(X(x),Y(y));
+}
+c.strokeStyle='#9a79aa';c.lineWidth=3;c.stroke();
+
+if(experimental){
+c.strokeStyle='#4f8b61';c.lineWidth=2;
+for(const bin of experimental){
+const x1=X(bin.x1),x2=X(bin.x2),y=Y(bin.density);
+c.beginPath();c.moveTo((x1+x2)/2,top+ch);c.lineTo((x1+x2)/2,y);c.stroke();
+}
+}
+
+for(let k=-4;k<=4;k++){
+const x=mu+k*sigma;
+if(x<xmin||x>xmax)continue;
+c.strokeStyle='#bbb';c.setLineDash([4,4]);c.beginPath();c.moveTo(X(x),top+10);c.lineTo(X(x),top+ch);c.stroke();c.setLineDash([]);
+c.fillStyle='#222';c.font='12px Arial';c.fillText((k===0?'μ':(k>0?`μ+${k}σ`:`μ${k}σ`)),X(x)-19,top+ch+18);
+}
+c.fillStyle='#222';c.font='bold 16px Arial';
+c.fillText(experimental?'Generated sample vs theoretical Normal curve':'Normal Probability Density',left,23);
+c.font='13px Arial';c.fillText('x',W/2,H-12);
+c.save();c.translate(14,H/2+75);c.rotate(-Math.PI/2);c.fillText('Density',0,0);c.restore();
+if(lower!==null&&upper!==null){
+c.fillStyle='#9a79aa';c.fillRect(W-195,15,12,12);c.fillStyle='#222';c.fillText('Normal density',W-178,26);
+c.fillStyle='#f1c27d';c.fillRect(W-195,32,12,12);c.fillStyle='#222';c.fillText('Selected area',W-178,43);
+}
+}
+
+function updateExplore(){
+let mu=+document.getElementById('mu').value,sig=+document.getElementById('sig').value;
+let a=+document.getElementById('xl').value,b=+document.getElementById('xu').value;
+document.getElementById('muv').textContent=mu.toFixed(1);
+document.getElementById('sigv').textContent=sig.toFixed(1);
+document.getElementById('mean').textContent=mu.toFixed(2);
+document.getElementById('variance').textContent=(sig*sig).toFixed(2);
+document.getElementById('sd').textContent=sig.toFixed(2);
+document.getElementById('xlv').textContent=a.toFixed(1);
+document.getElementById('xuv').textContent=b.toFixed(1);
+
+const lo=Math.min(a,b),hi=Math.max(a,b);
+const p=probBetween(lo,hi,mu,sig);
+const za=(lo-mu)/sig,zb=(hi-mu)/sig;
+document.getElementById('probResult').innerHTML=
+`P(${lo.toFixed(1)} ≤ X ≤ ${hi.toFixed(1)}) ≈ <b>${p.toFixed(4)}</b> = <b>${(100*p).toFixed(2)}%</b><br>`+
+`z-scores: <b>${za.toFixed(2)}</b> and <b>${zb.toFixed(2)}</b>`;
+
+drawNormal(document.getElementById('chart'),mu,sig,lo,hi);
+}
+
+function boxMuller(){
+let u1=Math.random(),u2=Math.random();
+return Math.sqrt(-2*Math.log(Math.max(u1,1e-12)))*Math.cos(2*Math.PI*u2);
+}
+function simulate(){
+const mu=+document.getElementById('simMu').value;
+const sig=+document.getElementById('simSigma').value;
+const N=+document.getElementById('simN').value;
+const values=new Array(N);
+let sum=0;
+for(let i=0;i<N;i++){
+values[i]=mu+sig*boxMuller();sum+=values[i];
+}
+const mean=sum/N;
+let ss=0;for(const v of values)ss+=(v-mean)*(v-mean);
+const sampleSD=Math.sqrt(ss/N);
+
+const xmin=mu-4*sig,xmax=mu+4*sig,bins=40;
+const width=(xmax-xmin)/bins;
+const counts=Array(bins).fill(0);
+for(const v of values){
+let idx=Math.floor((v-xmin)/width);
+if(idx>=0&&idx<bins)counts[idx]++;
+}
+const experimental=counts.map((count,i)=>({
+x1:xmin+i*width,
+x2:xmin+(i+1)*width,
+density:count/(N*width)
+}));
+drawNormal(document.getElementById('simCanvas'),mu,sig,null,null,experimental);
+
+document.getElementById('simResult').innerHTML=
+`<b>${N.toLocaleString()}</b> observations generated.<br>`+
+`Sample mean ≈ <b>${mean.toFixed(3)}</b>; theoretical μ = <b>${mu.toFixed(3)}</b>.<br>`+
+`Sample SD ≈ <b>${sampleSD.toFixed(3)}</b>; theoretical σ = <b>${sig.toFixed(3)}</b>.<br>`+
+`The histogram is plotted as density so it can be compared directly with the Normal curve.`;
+}
+
+const mu=document.getElementById('mu'),sig=document.getElementById('sig'),xl=document.getElementById('xl'),xu=document.getElementById('xu');
+const simMu=document.getElementById('simMu'),simSigma=document.getElementById('simSigma'),simN=document.getElementById('simN');
+function simLabels(){
+document.getElementById('emu').textContent=(+simMu.value).toFixed(1);
+document.getElementById('esig').textContent=(+simSigma.value).toFixed(1);
+document.getElementById('erv').textContent=simN.value;
+}
+[mu,sig,xl,xu].forEach(el=>el.addEventListener('input',updateExplore));
+[simMu,simSigma,simN].forEach(el=>el.addEventListener('input',simLabels));
+updateExplore();simLabels();
+</script>
+</body>
+</html>

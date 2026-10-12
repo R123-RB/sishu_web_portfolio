@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tracing the Cardioid: c = ζ(θ)</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1c2438; --ink:#e8ecf5; --muted:#8a94ad;
+    --accent:#e0483c; --accent2:#4fb0e0; --good:#59c98a; --gold:#d8b25c; --border:#2a3350;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; padding:24px; background:var(--bg); color:var(--ink); font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;}
+  h1{font-size:1.22rem; font-weight:600; margin:0 0 4px 0;}
+  .sub{color:var(--muted); font-size:.89rem; margin-bottom:16px; max-width:900px; line-height:1.55;}
+  .layout{display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start;}
+  .panel{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:13px; flex-shrink:0;}
+  .panel h2{font-size:.86rem; margin:0 0 6px 0; color:var(--gold); font-weight:600;}
+  canvas{border-radius:6px; display:block; background:#0c111d;}
+  .readout{font-size:.78rem; color:var(--muted); margin-top:8px; line-height:1.55;}
+  .readout b{color:var(--ink);}
+  .controls{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:16px; max-width:1050px;}
+  .controls .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px;}
+  input[type=range]{flex:1; min-width:220px;}
+  button{background:var(--panel2); color:var(--ink); border:1px solid var(--border); border-radius:6px; padding:6px 11px; font-size:.78rem; cursor:pointer; font-family:inherit;}
+  button:hover{border-color:var(--accent2);}
+  button.special{border-color:var(--gold); color:var(--gold);}
+  .status{margin-top:12px; padding:11px 14px; border-radius:8px; font-size:.88rem; font-weight:600; transition:background .2s,color .2s,border-color .2s;}
+  .status.neutral{background:rgba(138,148,173,0.10); color:var(--muted); border:1px solid var(--border);}
+  .status.cusp{background:rgba(216,178,92,0.16); color:var(--gold); border:1px solid rgba(216,178,92,0.5); box-shadow:0 0 14px rgba(216,178,92,0.25);}
+  .status.pd{background:rgba(79,176,224,0.16); color:var(--accent2); border:1px solid rgba(79,176,224,0.5); box-shadow:0 0 14px rgba(79,176,224,0.25);}
+  .legend{font-size:.72rem; color:var(--muted); margin-top:8px; line-height:1.5;}
+  .sw{display:inline-block; width:16px; height:2px; margin-right:6px; vertical-align:1px;}
+</style>
+</head>
+<body>
+
+<h1>How θ on the circle |z| = 1/2 traces the Mandelbrot cardioid</h1>
+<div class="sub">
+Three views of the <b>same</b> angle θ. Left: the neutral fixed point $z_c = \tfrac12 e^{2\pi i\theta}$ walking around the circle
+of radius $1/2$ in the <i>dynamical</i> plane. Middle: its image $c=\zeta(\theta)=z_c-z_c^2$ in the <i>parameter</i> plane — this is
+literally the boundary of the Mandelbrot set's main cardioid. Right: the multiplier $Q_c'(z_c)=2z_c=e^{2\pi i\theta}$, walking the unit
+circle in perfect sync. Drag θ slowly across $0$ and $1/2$ and watch all three panels answer together.
+</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <h2>z-plane — fixed point on |z|=1/2</h2>
+    <canvas id="zCanvas" width="260" height="260"></canvas>
+    <div class="readout">
+      θ = <b id="thetaLabelA">0.000</b><br>
+      z<sub>c</sub> = <b id="zLabel">0.500 + 0.000i</b>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>c-plane — c = ζ(θ) traces ∂(cardioid)</h2>
+    <canvas id="cCanvas" width="320" height="320"></canvas>
+    <div class="readout">
+      c = ζ(θ) = <b id="cLabel">0.250 + 0.000i</b>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>multiplier plane — 2z<sub>c</sub> = e<sup>2πiθ</sup></h2>
+    <canvas id="uCanvas" width="230" height="230"></canvas>
+    <div class="readout">
+      λ = <b id="lambdaLabel">1.000 + 0.000i</b><br>
+      |λ| = <b>1</b> always (neutral by construction)
+    </div>
+  </div>
+
+</div>
+
+<div class="controls">
+  <div class="row">
+    <span style="font-size:.82rem;color:var(--muted);">θ =</span>
+    <input type="range" id="thetaSlider" min="0" max="1000" value="0">
+    <span style="font-size:.85rem;" id="thetaVal">0.000</span>
+    <button id="playBtn">▶ auto-sweep</button>
+  </div>
+  <div class="row">
+    <button class="special" id="jumpCusp">jump to θ = 0 — cusp, c = 1/4</button>
+    <button class="special" id="jumpPD">jump to θ = 1/2 — period-doubling, c = −3/4</button>
+    <label style="font-size:.78rem;color:var(--muted);">sweep speed <input type="range" id="speed" min="1" max="10" value="3" style="width:80px;"></label>
+  </div>
+  <div class="status neutral" id="status">Sweeping the boundary of the main cardioid.</div>
+  <div class="legend">
+    <div><span class="sw" style="background:var(--gold);"></span>path swept so far (θ′ from 0 to current θ)</div>
+    <div><span class="sw" style="background:rgba(138,148,173,0.4);"></span>full guide curve — circle |z|=1/2, cardioid boundary, or unit circle</div>
+  </div>
+</div>
+
+<script>
+const TAU = Math.PI*2;
+
+// ================= z-plane panel =================
+const zCanvas = document.getElementById('zCanvas');
+const zctx = zCanvas.getContext('2d');
+const ZSZ = zCanvas.width;
+const Z_RANGE = 0.8; // view: re,im in [-0.8,0.8]
+function zToCanvas(re,im){ return { x:(re+Z_RANGE)/(2*Z_RANGE)*ZSZ, y:(im+Z_RANGE)/(2*Z_RANGE)*ZSZ }; }
+
+function drawZPanel(theta){
+  zctx.clearRect(0,0,ZSZ,ZSZ);
+  zctx.strokeStyle='#2a3350'; zctx.lineWidth=1;
+  const o = zToCanvas(0,0);
+  zctx.beginPath(); zctx.moveTo(0,o.y); zctx.lineTo(ZSZ,o.y); zctx.moveTo(o.x,0); zctx.lineTo(o.x,ZSZ); zctx.stroke();
+  zctx.strokeStyle='rgba(138,148,173,0.4)'; zctx.lineWidth=1.3;
+  zctx.beginPath();
+  for(let i=0;i<=200;i++){
+    const phi = TAU*i/200;
+    const p = zToCanvas(0.5*Math.cos(phi), 0.5*Math.sin(phi));
+    if(i===0) zctx.moveTo(p.x,p.y); else zctx.lineTo(p.x,p.y);
+  }
+  zctx.stroke();
+  zctx.strokeStyle = '#d8b25c'; zctx.lineWidth=2.4;
+  zctx.beginPath();
+  const N=Math.max(2,Math.floor(theta*200)+1);
+  for(let i=0;i<=N;i++){
+    const phi = TAU*theta*i/N;
+    const p = zToCanvas(0.5*Math.cos(phi), 0.5*Math.sin(phi));
+    if(i===0) zctx.moveTo(p.x,p.y); else zctx.lineTo(p.x,p.y);
+  }
+  zctx.stroke();
+  const phi = TAU*theta;
+  const zc = {re:0.5*Math.cos(phi), im:0.5*Math.sin(phi)};
+  const p = zToCanvas(zc.re, zc.im);
+  zctx.strokeStyle='rgba(216,178,92,0.6)'; zctx.lineWidth=1.2;
+  zctx.beginPath(); zctx.moveTo(o.x,o.y); zctx.lineTo(p.x,p.y); zctx.stroke();
+  zctx.fillStyle='#d8b25c';
+  zctx.beginPath(); zctx.arc(p.x,p.y,5,0,TAU); zctx.fill();
+  const p0 = zToCanvas(0.5,0), p1 = zToCanvas(-0.5,0);
+  zctx.fillStyle='#8a94ad';
+  [p0,p1].forEach(q=>{ zctx.beginPath(); zctx.arc(q.x,q.y,3,0,TAU); zctx.fill(); });
+  zctx.font='10px Georgia'; zctx.fillStyle='#8a94ad';
+  zctx.fillText('θ=0', p0.x+6, p0.y-6);
+  zctx.fillText('θ=1/2', p1.x-34, p1.y-6);
+  return zc;
+}
+
+// ================= c-plane panel (Mandelbrot + cardioid) =================
+const cCanvas = document.getElementById('cCanvas');
+const cctx = cCanvas.getContext('2d');
+const CSZ = cCanvas.width;
+const C_RE0=-2.1, C_RE1=1.0, C_IM0=-1.5, C_IM1=1.5;
+const cBase = document.createElement('canvas'); cBase.width=CSZ; cBase.height=CSZ;
+const cBaseCtx = cBase.getContext('2d');
+function cToCanvas(re,im){ return { x:(re-C_RE0)/(C_RE1-C_RE0)*CSZ, y:(im-C_IM0)/(C_IM1-C_IM0)*CSZ }; }
+
+function renderMandelbrotBase(){
+  const img = cBaseCtx.createImageData(CSZ,CSZ);
+  const maxIter=70;
+  for(let px=0;px<CSZ;px++) for(let py=0;py<CSZ;py++){
+    const cre = C_RE0+(px/CSZ)*(C_RE1-C_RE0), cim = C_IM0+(py/CSZ)*(C_IM1-C_IM0);
+    let zre=0,zim=0,iter=0;
+    while(zre*zre+zim*zim<4 && iter<maxIter){
+      const nzre=zre*zre-zim*zim+cre, nzim=2*zre*zim+cim;
+      zre=nzre; zim=nzim; iter++;
+    }
+    const idx=(py*CSZ+px)*4;
+    if(iter===maxIter){ img.data[idx]=18;img.data[idx+1]=20;img.data[idx+2]=30;img.data[idx+3]=255; }
+    else{
+      const t=iter/maxIter;
+      img.data[idx]=Math.floor(30+t*90); img.data[idx+1]=Math.floor(35+t*60); img.data[idx+2]=Math.floor(55+t*70); img.data[idx+3]=255;
+    }
+  }
+  cBaseCtx.putImageData(img,0,0);
+}
+renderMandelbrotBase();
+
+function zeta(theta){
+  const phi = TAU*theta;
+  const zre = 0.5*Math.cos(phi), zim = 0.5*Math.sin(phi);
+  const z2re = zre*zre - zim*zim, z2im = 2*zre*zim;
+  return { re: zre - z2re, im: zim - z2im };
+}
+
+function drawCPanel(theta){
+  cctx.drawImage(cBase,0,0);
+  cctx.strokeStyle='rgba(138,148,173,0.55)'; cctx.lineWidth=1.4;
+  cctx.beginPath();
+  for(let i=0;i<=400;i++){
+    const c = zeta(i/400);
+    const p = cToCanvas(c.re,c.im);
+    if(i===0) cctx.moveTo(p.x,p.y); else cctx.lineTo(p.x,p.y);
+  }
+  cctx.closePath(); cctx.stroke();
+
+  cctx.strokeStyle='#d8b25c'; cctx.lineWidth=2.6;
+  cctx.beginPath();
+  const N=Math.max(2,Math.floor(theta*400)+1);
+  for(let i=0;i<=N;i++){
+    const c = zeta(theta*i/N);
+    const p = cToCanvas(c.re,c.im);
+    if(i===0) cctx.moveTo(p.x,p.y); else cctx.lineTo(p.x,p.y);
+  }
+  cctx.stroke();
+
+  const c = zeta(theta);
+  const p = cToCanvas(c.re,c.im);
+  cctx.fillStyle='#d8b25c';
+  cctx.beginPath(); cctx.arc(p.x,p.y,5,0,TAU); cctx.fill();
+
+  const pCusp = cToCanvas(0.25,0), pPD = cToCanvas(-0.75,0);
+  cctx.fillStyle='#e0483c';
+  cctx.beginPath(); cctx.moveTo(pCusp.x,pCusp.y-6); cctx.lineTo(pCusp.x+6,pCusp.y+5); cctx.lineTo(pCusp.x-6,pCusp.y+5); cctx.closePath(); cctx.fill();
+  cctx.fillStyle='#4fb0e0';
+  cctx.beginPath(); cctx.arc(pPD.x,pPD.y,4.5,0,TAU); cctx.fill();
+  cctx.font='10px Georgia';
+  cctx.fillStyle='#e0483c'; cctx.fillText('cusp, c=1/4', pCusp.x+8, pCusp.y+4);
+  cctx.fillStyle='#4fb0e0'; cctx.fillText('period-doubling, c=−3/4', pPD.x-118, pPD.y-8);
+  return c;
+}
+
+// ================= multiplier (unit circle) panel =================
+const uCanvas = document.getElementById('uCanvas');
+const uctx = uCanvas.getContext('2d');
+const USZ = uCanvas.width;
+const U_RANGE = 1.3;
+function uToCanvas(re,im){ return { x:(re+U_RANGE)/(2*U_RANGE)*USZ, y:(im+U_RANGE)/(2*U_RANGE)*USZ }; }
+
+function drawUPanel(theta){
+  uctx.clearRect(0,0,USZ,USZ);
+  uctx.strokeStyle='#2a3350'; uctx.lineWidth=1;
+  const o = uToCanvas(0,0);
+  uctx.beginPath(); uctx.moveTo(0,o.y); uctx.lineTo(USZ,o.y); uctx.moveTo(o.x,0); uctx.lineTo(o.x,USZ); uctx.stroke();
+  uctx.strokeStyle='rgba(138,148,173,0.45)'; uctx.lineWidth=1.3;
+  uctx.beginPath();
+  for(let i=0;i<=200;i++){
+    const phi=TAU*i/200;
+    const p=uToCanvas(Math.cos(phi),Math.sin(phi));
+    if(i===0) uctx.moveTo(p.x,p.y); else uctx.lineTo(p.x,p.y);
+  }
+  uctx.stroke();
+  uctx.strokeStyle='#d8b25c'; uctx.lineWidth=2.4;
+  uctx.beginPath();
+  const N=Math.max(2,Math.floor(theta*200)+1);
+  for(let i=0;i<=N;i++){
+    const phi=TAU*theta*i/N;
+    const p=uToCanvas(Math.cos(phi),Math.sin(phi));
+    if(i===0) uctx.moveTo(p.x,p.y); else uctx.lineTo(p.x,p.y);
+  }
+  uctx.stroke();
+  const phi=TAU*theta;
+  const lam={re:Math.cos(phi), im:Math.sin(phi)};
+  const p=uToCanvas(lam.re,lam.im);
+  uctx.strokeStyle='rgba(216,178,92,0.6)'; uctx.lineWidth=1.2;
+  uctx.beginPath(); uctx.moveTo(o.x,o.y); uctx.lineTo(p.x,p.y); uctx.stroke();
+  uctx.fillStyle='#d8b25c';
+  uctx.beginPath(); uctx.arc(p.x,p.y,5,0,TAU); uctx.fill();
+  const pPlus=uToCanvas(1,0), pMinus=uToCanvas(-1,0);
+  uctx.fillStyle='#e0483c'; uctx.beginPath(); uctx.arc(pPlus.x,pPlus.y,3.3,0,TAU); uctx.fill();
+  uctx.fillStyle='#4fb0e0'; uctx.beginPath(); uctx.arc(pMinus.x,pMinus.y,3.3,0,TAU); uctx.fill();
+  uctx.font='10px Georgia';
+  uctx.fillStyle='#e0483c'; uctx.fillText('λ=+1', pPlus.x-14, pPlus.y-8);
+  uctx.fillStyle='#4fb0e0'; uctx.fillText('λ=−1', pMinus.x-12, pMinus.y-8);
+  return lam;
+}
+
+// ================= master update =================
+let theta = 0;
+function fmt(z){ return z.re.toFixed(3) + (z.im>=0?' + ':' − ') + Math.abs(z.im).toFixed(3) + 'i'; }
+
+function update(){
+  const zc = drawZPanel(theta);
+  const c = drawCPanel(theta);
+  const lam = drawUPanel(theta);
+
+  document.getElementById('thetaLabelA').textContent = theta.toFixed(3);
+  document.getElementById('zLabel').textContent = fmt(zc);
+  document.getElementById('cLabel').textContent = fmt(c);
+  document.getElementById('lambdaLabel').textContent = fmt(lam);
+  document.getElementById('thetaVal').textContent = theta.toFixed(3);
+
+  const t = ((theta % 1)+1)%1;
+  const distCusp = Math.min(t, 1-t);
+  const distPD = Math.abs(t-0.5);
+  const statusEl = document.getElementById('status');
+  if(distCusp < 0.012){
+    statusEl.className='status cusp';
+    statusEl.textContent = 'θ ≈ 0 → c ≈ 1/4 → the CUSP of the cardioid. Multiplier λ → +1: a saddle-node bifurcation — the attracting and repelling fixed points are colliding and about to annihilate each other.';
+  } else if(distPD < 0.012){
+    statusEl.className='status pd';
+    statusEl.textContent = 'θ ≈ 1/2 → c ≈ −3/4 → PERIOD-DOUBLING bifurcation. Multiplier λ → −1: the fixed point is about to turn repelling while a genuinely new attracting period-2 orbit is born nearby — this is exactly where the basilica\'s period-2 bulb attaches.';
+  } else {
+    statusEl.className='status neutral';
+    statusEl.textContent = 'Sweeping the boundary of the main cardioid — every θ here gives a neutral fixed point (|λ| = 1 exactly), the borderline between attracting and repelling.';
+  }
+}
+
+document.getElementById('thetaSlider').addEventListener('input', (e)=>{
+  theta = parseInt(e.target.value)/1000;
+  update();
+});
+document.getElementById('jumpCusp').addEventListener('click', ()=>{
+  theta = 0; document.getElementById('thetaSlider').value=0; update();
+});
+document.getElementById('jumpPD').addEventListener('click', ()=>{
+  theta = 0.5; document.getElementById('thetaSlider').value=500; update();
+});
+
+let playing=false;
+document.getElementById('playBtn').addEventListener('click',(e)=>{
+  playing=!playing;
+  e.target.textContent = playing ? '⏸ pause' : '▶ auto-sweep';
+});
+function animate(){
+  if(playing){
+    const speed = parseInt(document.getElementById('speed').value);
+    theta = (theta + 0.0006*speed) % 1;
+    document.getElementById('thetaSlider').value = Math.round(theta*1000);
+    update();
+  }
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+update();
+</script>
+
+</body>
+</html>

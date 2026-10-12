@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filled Julia Sets & Critical Orbits</title>
+<style>
+  :root{
+    --bg:#10121B;
+    --panel:#171A26;
+    --rule:#2B2F42;
+    --text:#EDEDF4;
+    --muted:#9498B3;
+    --target-fill:#E8A33D;
+    --target-stroke:#C98429;
+    --point:#FF6B5B;
+    --current:#6FCF97;
+    --warn:#F2C94C;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding:32px 20px 60px;
+  }
+  .mono{ font-family:"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; letter-spacing:0.02em; }
+  .wrap{ max-width:1080px; margin:0 auto; }
+  h1{
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    font-weight:400; font-size:2rem; margin:0 0 8px; letter-spacing:0.01em;
+  }
+  header p{ color:var(--muted); max-width:680px; line-height:1.55; margin:0 0 4px; font-size:0.97rem; }
+
+  .app{ display:flex; gap:34px; align-items:flex-start; margin-top:26px; }
+  @media (max-width:880px){ .app{ flex-direction:column; } }
+
+  .left{ flex:0 0 auto; width:min(400px,100%); }
+  .julia-wrap{ position:relative; }
+  #julia{
+    width:100%; aspect-ratio:1/1; display:block;
+    border:1px solid var(--rule); image-rendering:pixelated;
+  }
+  .axis-caption{ color:var(--muted); font-size:0.78rem; margin-top:8px; line-height:1.5; }
+
+  .c-readout{
+    font-family: Georgia, serif; font-size:1.3rem; margin:16px 0 4px;
+  }
+  .c-readout span{ color:var(--target-fill); }
+
+  .sliders{ margin-top:10px; }
+  .slider-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .slider-row label{ width:26px; color:var(--muted); font-size:0.88rem; }
+  .slider-row input[type=range]{ flex:1; accent-color:var(--target-fill); }
+  .slider-row input[type=number]{
+    width:74px; background:var(--panel); border:1px solid var(--rule); color:var(--text);
+    padding:4px 6px; font-size:0.85rem; border-radius:2px;
+  }
+
+  .right{ flex:1 1 380px; min-width:300px; }
+  .section{ border-top:1px solid var(--rule); padding:16px 0; }
+  .section:first-child{ border-top:none; padding-top:0; }
+  .section h2{
+    font-size:0.72rem; font-weight:600; color:var(--muted); margin:0 0 12px;
+    text-transform:uppercase; letter-spacing:0.08em;
+  }
+
+  .presets{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .presets button{
+    background:var(--panel); border:1px solid var(--rule); color:var(--text);
+    padding:8px 10px; font-size:0.83rem; text-align:left; cursor:pointer; border-radius:2px;
+  }
+  .presets button:hover{ border-color:#565b7d; }
+  .presets button.active{ border-color:var(--target-fill); color:var(--target-fill); }
+  .presets button b{ color:inherit; opacity:0.7; margin-right:4px; }
+
+  .status-line{ font-size:0.95rem; line-height:1.7; }
+  .status-line .lab{ color:var(--muted); }
+  .status-connected{ color:var(--current); font-weight:600; }
+  .status-disconnected{ color:var(--point); font-weight:600; }
+  .status-bounded{ color:var(--current); }
+  .status-escaped{ color:var(--point); }
+
+  .mando-wrap{ position:relative; width:190px; }
+  #mando{ width:100%; aspect-ratio:1.35/1; border:1px solid var(--rule); cursor:crosshair; display:block; }
+  .mando-caption{ color:var(--muted); font-size:0.78rem; margin-top:6px; line-height:1.5; }
+
+  .log{ max-height:160px; overflow-y:auto; font-size:0.83rem; }
+  .log div{ padding:5px 0; border-bottom:1px solid var(--rule); display:flex; justify-content:space-between; gap:8px; }
+  .log div:last-child{ border-bottom:none; }
+  .log .empty{ color:var(--muted); font-style:italic; }
+
+  button.action{
+    background:none; border:1px solid var(--rule); color:var(--text);
+    padding:8px 14px; font-size:0.87rem; cursor:pointer; border-radius:2px;
+  }
+  button.action:hover{ border-color:#565b7d; background:#1D2032; }
+
+  .notes{ font-size:0.88rem; color:var(--muted); line-height:1.6; }
+  .notes p{ margin:0 0 10px; }
+  .notes b{ color:#c7c9de; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Filled Julia Sets &amp; Critical Orbits</h1>
+    <p>Goal: see how the <b style="color:#c7c9de">shape</b> of the filled Julia set of $Q_c$ connects to the <b style="color:#c7c9de">fate of the orbit of 0</b> under $Q_c$. Try each preset below, or drag the sliders / click the mini-map to explore any $c$.</p>
+  </header>
+
+  <div class="app">
+    <div class="left">
+      <div class="julia-wrap">
+        <canvas id="julia" width="300" height="300"></canvas>
+      </div>
+      <div class="axis-caption">Square shown: $-2 \le \mathrm{Re}(z), \mathrm{Im}(z) \le 2$. Dark region = filled Julia set $K_c$ (orbit stays bounded). The bright path is the orbit of 0.</div>
+
+      <div class="c-readout">c = <span id="cReadout">0 + 0i</span></div>
+      <div class="sliders">
+        <div class="slider-row">
+          <label>Re</label>
+          <input type="range" id="reSlider" min="-2" max="2" step="0.005" value="0">
+          <input type="number" id="reNum" min="-2" max="2" step="0.01" value="0">
+        </div>
+        <div class="slider-row">
+          <label>Im</label>
+          <input type="range" id="imSlider" min="-2" max="2" step="0.005" value="0">
+          <input type="number" id="imNum" min="-2" max="2" step="0.01" value="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="section">
+        <h2>Assigned c-values</h2>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="section">
+        <h2>What's happening at this c</h2>
+        <div class="status-line" id="statusLine"></div>
+      </div>
+
+      <div class="section">
+        <h2>Mandelbrot mini-map</h2>
+        <div class="mando-wrap">
+          <canvas id="mando" width="190" height="140"></canvas>
+        </div>
+        <div class="mando-caption">Each point here <i>is</i> a c-value, colored by whether 0's orbit under $Q_c$ escapes. Click anywhere to jump straight to that c and watch its Julia set update on the left.</div>
+      </div>
+
+      <div class="section">
+        <h2>Session log</h2>
+        <div class="log" id="log"><div class="empty">Click a preset to start recording results here.</div></div>
+        <div style="margin-top:10px;">
+          <button class="action" id="logCurrent">Log current c</button>
+          <button class="action" id="clearLog">Clear log</button>
+        </div>
+      </div>
+
+      <div class="section notes">
+        <h2>Notes</h2>
+        <p><b>1.</b> Some filled Julia sets look like several separate blobs — but they can actually be joined at a single, thin point, not truly disconnected. If a shape looks pinched, that's worth a closer look before you call it "shattered."</p>
+        <p><b>2.</b> Every render here scans the square from &minus;2 to 2 in both directions, since any point outside that range is guaranteed to escape whenever |c| ≤ 2 — which covers every c-value on this page.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const juliaCanvas = document.getElementById('julia');
+  const jctx = juliaCanvas.getContext('2d');
+  const JW = juliaCanvas.width, JH = juliaCanvas.height;
+  const JMAX_ITER = 55;
+
+  const mandoCanvas = document.getElementById('mando');
+  const mctx = mandoCanvas.getContext('2d');
+  const MW = mandoCanvas.width, MH = mandoCanvas.height;
+  const M_RE = [-2.4, 1.0], M_IM = [-1.2, 1.2];
+  const MMAX_ITER = 60;
+
+  const PRESETS = [
+    {label:'a', re:-1.5,  im:0.2},
+    {label:'b', re:-0.1,  im:0.75},
+    {label:'c', re:-0.4,  im:0.8},
+    {label:'d', re:0.28,  im:0.53},
+    {label:'e', re:-0.11, im:0.86},
+    {label:'f', re:-1.32, im:0},
+    {label:'g', re:0.48,  im:0.48},
+    {label:'h', re:0,     im:1.3},
+    {label:'i', re:-0.5,  im:0.57},
+    {label:'j', re:-0.4,  im:0.4}
+  ];
+
+  // ---- color gradient (bg navy -> slate -> amber -> coral) ----
+  const stops = [
+    {t:0.00, c:[13,15,23]},
+    {t:0.32, c:[59,64,96]},
+    {t:0.62, c:[232,163,61]},
+    {t:1.00, c:[255,107,91]}
+  ];
+  function gradColor(t){
+    t = Math.min(1, Math.max(0, t));
+    for(let i=0;i<stops.length-1;i++){
+      const s0=stops[i], s1=stops[i+1];
+      if(t>=s0.t && t<=s1.t){
+        const f = (t-s0.t)/(s1.t-s0.t);
+        return [
+          Math.round(s0.c[0]+(s1.c[0]-s0.c[0])*f),
+          Math.round(s0.c[1]+(s1.c[1]-s0.c[1])*f),
+          Math.round(s0.c[2]+(s1.c[2]-s0.c[2])*f)
+        ];
+      }
+    }
+    return stops[stops.length-1].c;
+  }
+  const INTERIOR = [7,8,13];
+
+  let c = {re:-0.4, im:0.6};
+
+  function renderJulia(){
+    const img = jctx.createImageData(JW, JH);
+    const data = img.data;
+    for(let py=0; py<JH; py++){
+      const y0 = 2 - (py/(JH-1))*4;
+      for(let px=0; px<JW; px++){
+        const x0 = -2 + (px/(JW-1))*4;
+        let zr=x0, zi=y0, k=0, escaped=false;
+        for(; k<JMAX_ITER; k++){
+          const zr2=zr*zr, zi2=zi*zi;
+          if(zr2+zi2>4){ escaped=true; break; }
+          const nzi = 2*zr*zi + c.im;
+          zr = zr2-zi2+c.re;
+          zi = nzi;
+        }
+        const idx = (py*JW+px)*4;
+        let col;
+        if(escaped){
+          const t = Math.pow(k/JMAX_ITER, 0.5);
+          col = gradColor(t);
+        } else col = INTERIOR;
+        data[idx]=col[0]; data[idx+1]=col[1]; data[idx+2]=col[2]; data[idx+3]=255;
+      }
+    }
+    jctx.putImageData(img,0,0);
+  }
+
+  function toCanvasXY(re, im){
+    return { x:((re+2)/4)*JW, y:((2-im)/4)*JH };
+  }
+
+  function orbitOfZero(cc, maxSteps){
+    let zr=0, zi=0;
+    const pts=[{re:0,im:0}];
+    let escapedAt=-1;
+    for(let n=1;n<=maxSteps;n++){
+      const nzr = zr*zr - zi*zi + cc.re;
+      const nzi = 2*zr*zi + cc.im;
+      zr=nzr; zi=nzi;
+      if(n<=40) pts.push({re:zr,im:zi});
+      if(zr*zr+zi*zi > 4){ escapedAt=n; break; }
+    }
+    return {pts, bounded: escapedAt===-1, escapedAt};
+  }
+
+  function drawOrbit(orbit){
+    jctx.lineWidth = 1.4;
+    jctx.strokeStyle = 'rgba(111,207,151,0.75)';
+    jctx.beginPath();
+    orbit.pts.forEach((p,i)=>{
+      const {x,y} = toCanvasXY(p.re,p.im);
+      if(i===0) jctx.moveTo(x,y); else jctx.lineTo(x,y);
+    });
+    jctx.stroke();
+    orbit.pts.forEach((p,i)=>{
+      const {x,y} = toCanvasXY(p.re,p.im);
+      jctx.beginPath();
+      jctx.fillStyle = i===0 ? '#EDEDF4' : 'rgba(111,207,151,0.9)';
+      jctx.arc(x,y, i===0?3.5:2, 0, Math.PI*2);
+      jctx.fill();
+    });
+  }
+
+  function fmtC(cc){
+    const reStr = cc.re.toFixed(2);
+    const imStr = (cc.im>=0?'+':'-') + Math.abs(cc.im).toFixed(2) + 'i';
+    return reStr + ' ' + imStr;
+  }
+
+  function updateStatus(orbit){
+    const bounded = orbit.bounded;
+    const box = document.getElementById('statusLine');
+    const connectedHtml = bounded
+      ? '<span class="status-connected">CONNECTED</span> — the filled Julia set is one joined piece.'
+      : '<span class="status-disconnected">SHATTERED</span> — a scattered dust of infinitely many pieces (a Cantor set).';
+    const orbitHtml = bounded
+      ? '<span class="status-bounded">bounded</span> — 0\'s orbit never leaves the disk of radius 2.'
+      : '<span class="status-escaped">escapes</span> — |z<sub>n</sub>| passes 2 at iteration <span class="mono">'+orbit.escapedAt+'</span>.';
+    box.innerHTML =
+      '<div><span class="lab">Filled Julia set:</span> '+connectedHtml+'</div>' +
+      '<div><span class="lab">Orbit of 0:</span> '+orbitHtml+'</div>';
+  }
+
+  function renderAll(){
+    document.getElementById('cReadout').textContent = fmtC(c);
+    document.getElementById('reSlider').value = c.re;
+    document.getElementById('imSlider').value = c.im;
+    document.getElementById('reNum').value = c.re.toFixed(2);
+    document.getElementById('imNum').value = c.im.toFixed(2);
+    renderJulia();
+    const orbit = orbitOfZero(c, 200);
+    drawOrbit(orbit);
+    updateStatus(orbit);
+    updateMandoMarker();
+    highlightActivePreset();
+    return orbit;
+  }
+
+  // ---------- Mandelbrot mini-map (computed once, cached) ----------
+  let mandoImage = null;
+  function buildMando(){
+    const img = mctx.createImageData(MW, MH);
+    const data = img.data;
+    for(let py=0; py<MH; py++){
+      const im0 = M_IM[1] - (py/(MH-1))*(M_IM[1]-M_IM[0]);
+      for(let px=0; px<MW; px++){
+        const re0 = M_RE[0] + (px/(MW-1))*(M_RE[1]-M_RE[0]);
+        let zr=0, zi=0, k=0, escaped=false;
+        for(; k<MMAX_ITER; k++){
+          const zr2=zr*zr, zi2=zi*zi;
+          if(zr2+zi2>4){ escaped=true; break; }
+          const nzi=2*zr*zi+im0;
+          zr=zr2-zi2+re0; zi=nzi;
+        }
+        const idx=(py*MW+px)*4;
+        let col;
+        if(escaped){ col = gradColor(Math.pow(k/MMAX_ITER,0.5)); }
+        else col = INTERIOR;
+        data[idx]=col[0]; data[idx+1]=col[1]; data[idx+2]=col[2]; data[idx+3]=255;
+      }
+    }
+    mandoImage = img;
+    mctx.putImageData(img,0,0);
+  }
+
+  function mandoXY(re,im){
+    return {
+      x: ((re-M_RE[0])/(M_RE[1]-M_RE[0]))*MW,
+      y: ((M_IM[1]-im)/(M_IM[1]-M_IM[0]))*MH
+    };
+  }
+
+  function updateMandoMarker(){
+    if(mandoImage) mctx.putImageData(mandoImage,0,0);
+    const {x,y} = mandoXY(c.re,c.im);
+    mctx.beginPath();
+    mctx.arc(x,y,4.5,0,Math.PI*2);
+    mctx.strokeStyle = '#EDEDF4';
+    mctx.lineWidth = 1.6;
+    mctx.stroke();
+    mctx.beginPath();
+    mctx.arc(x,y,2,0,Math.PI*2);
+    mctx.fillStyle = '#FF6B5B';
+    mctx.fill();
+  }
+
+  mandoCanvas.addEventListener('click', (e)=>{
+    const rect = mandoCanvas.getBoundingClientRect();
+    const px = (e.clientX-rect.left)/rect.width * MW;
+    const py = (e.clientY-rect.top)/rect.height * MH;
+    const re = M_RE[0] + (px/MW)*(M_RE[1]-M_RE[0]);
+    const im = M_IM[1] - (py/MH)*(M_IM[1]-M_IM[0]);
+    c = {re: Math.max(-2,Math.min(2,re)), im: Math.max(-2,Math.min(2,im))};
+    scheduleRender();
+  });
+
+  // ---------- controls ----------
+  let renderPending = false;
+  function scheduleRender(){
+    if(renderPending) return;
+    renderPending = true;
+    requestAnimationFrame(()=>{ renderPending=false; renderAll(); });
+  }
+
+  function syncFromSliders(){
+    c = { re: parseFloat(document.getElementById('reSlider').value), im: parseFloat(document.getElementById('imSlider').value) };
+    scheduleRender();
+  }
+  document.getElementById('reSlider').addEventListener('input', syncFromSliders);
+  document.getElementById('imSlider').addEventListener('input', syncFromSliders);
+  document.getElementById('reNum').addEventListener('change', ()=>{
+    c.re = parseFloat(document.getElementById('reNum').value)||0;
+    scheduleRender();
+  });
+  document.getElementById('imNum').addEventListener('change', ()=>{
+    c.im = parseFloat(document.getElementById('imNum').value)||0;
+    scheduleRender();
+  });
+
+  // ---------- presets ----------
+  const presetsEl = document.getElementById('presets');
+  PRESETS.forEach(p=>{
+    const btn = document.createElement('button');
+    btn.dataset.label = p.label;
+    btn.innerHTML = '<b>'+p.label+'.</b> '+fmtC({re:p.re,im:p.im});
+    btn.addEventListener('click', ()=>{
+      c = {re:p.re, im:p.im};
+      const orbit = renderAll();
+      addLog(p.label, orbit);
+    });
+    presetsEl.appendChild(btn);
+  });
+  function highlightActivePreset(){
+    Array.from(presetsEl.children).forEach(btn=>{
+      const p = PRESETS.find(pp=>pp.label===btn.dataset.label);
+      const match = Math.abs(p.re-c.re)<0.001 && Math.abs(p.im-c.im)<0.001;
+      btn.classList.toggle('active', match);
+    });
+  }
+
+  // ---------- log ----------
+  const logEl = document.getElementById('log');
+  let logEmpty = true;
+  function addLog(label, orbit){
+    if(logEmpty){ logEl.innerHTML=''; logEmpty=false; }
+    const row = document.createElement('div');
+    const tag = label ? (label+'. ') : '';
+    const statusTxt = orbit.bounded ? 'connected / bounded' : ('shattered / escaped @'+orbit.escapedAt);
+    row.innerHTML = '<span class="mono">'+tag+fmtC(c)+'</span><span>'+statusTxt+'</span>';
+    logEl.insertBefore(row, logEl.firstChild);
+  }
+  document.getElementById('logCurrent').addEventListener('click', ()=>{
+    const orbit = orbitOfZero(c,200);
+    addLog('', orbit);
+  });
+  document.getElementById('clearLog').addEventListener('click', ()=>{
+    logEl.innerHTML = '<div class="empty">Click a preset to start recording results here.</div>';
+    logEmpty = true;
+  });
+
+  buildMando();
+  renderAll();
+})();
+</script>
+</body>
+</html>

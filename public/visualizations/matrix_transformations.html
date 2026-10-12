@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matrix Transformations</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #F5F0E8;
+  --surface: #FDFAF4;
+  --surf2:   #EDE8DC;
+  --border:  #D6CEBC;
+  --border2: #C4BAA4;
+  --text:    #2C2415;
+  --muted:   #7A6F5A;
+  --accent:  #7C3D0F;
+  --green:   #15803D;
+  --blue:    #1A4D7C;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 48px;
+  gap: 28px;
+}
+
+header {
+  text-align: center;
+}
+header h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+header p {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+/* ── CANVAS ── */
+.canvas-wrap {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(44,36,21,0.07);
+}
+canvas {
+  display: block;
+}
+
+/* ── MATRIX DISPLAY ── */
+.matrix-eq {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 24px;
+}
+.bracket {
+  font-size: 2.2rem;
+  font-weight: 200;
+  color: var(--muted);
+  line-height: 1;
+}
+.mat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 18px;
+  text-align: right;
+}
+.mat-grid span {
+  font-size: 0.88rem;
+  font-weight: 600;
+  min-width: 52px;
+  transition: color 0.2s;
+}
+.mat-grid span.changed { color: var(--accent); }
+.mat-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: center;
+}
+.eq-sym {
+  font-size: 1.1rem;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ctrl {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ctrl-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.ctrl-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.ctrl-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 56px;
+  text-align: right;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(124,61,15,0.18);
+  transition: box-shadow 0.15s;
+}
+input[type=range]:hover::-webkit-slider-thumb {
+  box-shadow: 0 0 0 5px rgba(124,61,15,0.22);
+}
+input[type=range]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+
+/* ── PRESETS ── */
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: 520px;
+}
+.presets button {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.presets button:hover {
+  background: var(--surf2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.presets button.reset-btn {
+  background: var(--surf2);
+  border-color: var(--border2);
+  color: var(--muted);
+}
+
+/* ── EXPLANATION ── */
+.explain {
+  max-width: 520px;
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-left: 3.5px solid var(--accent);
+  border-radius: 8px;
+  padding: 13px 16px;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--muted);
+  min-height: 52px;
+}
+.explain strong { color: var(--text); font-weight: 600; }
+
+/* ── THEORY BOX ── */
+.theory {
+  max-width: 520px;
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.theory h2 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.theory p {
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.theory code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  background: var(--surf2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--blue);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Matrix Transformations</h1>
+  <p>Every geometric transformation is a 2×2 matrix acting on points in the plane.</p>
+</header>
+
+<!-- Canvas -->
+<div class="canvas-wrap">
+  <canvas id="cvs" width="480" height="300"></canvas>
+</div>
+
+<!-- Matrix equation display -->
+<div class="matrix-eq">
+  <div>
+    <div class="mat-label" style="margin-bottom:4px;">Transform matrix</div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span class="bracket">[</span>
+      <div class="mat-grid">
+        <span id="m00">1.00</span><span id="m01">0.00</span>
+        <span id="m10">0.00</span><span id="m11">1.00</span>
+      </div>
+      <span class="bracket">]</span>
+    </div>
+  </div>
+  <span class="eq-sym" style="margin:0 6px;">·</span>
+  <div style="text-align:center;">
+    <div class="mat-label" style="margin-bottom:4px;">point</div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span class="bracket">[</span>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;line-height:2;color:var(--muted);">x<br>y</div>
+      <span class="bracket">]</span>
+    </div>
+  </div>
+  <span class="eq-sym" style="margin:0 6px;">=</span>
+  <div style="text-align:center;">
+    <div class="mat-label" style="margin-bottom:4px;">new point</div>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <span class="bracket">[</span>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;line-height:2;color:var(--blue);">x'<br>y'</div>
+      <span class="bracket">]</span>
+    </div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="ctrl">
+    <div class="ctrl-header">
+      <span class="ctrl-name">Horizontal stretch (sx)</span>
+      <span class="ctrl-val" id="lsx">1.0×</span>
+    </div>
+    <input type="range" id="sx" min="0.2" max="3" step="0.1" value="1">
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-header">
+      <span class="ctrl-name">Vertical stretch (sy)</span>
+      <span class="ctrl-val" id="lsy">1.0×</span>
+    </div>
+    <input type="range" id="sy" min="0.2" max="3" step="0.1" value="1">
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-header">
+      <span class="ctrl-name">Rotation (θ)</span>
+      <span class="ctrl-val" id="lrot">0°</span>
+    </div>
+    <input type="range" id="rot" min="-180" max="180" step="1" value="0">
+  </div>
+  <div class="ctrl">
+    <div class="ctrl-header">
+      <span class="ctrl-name">Shear (horizontal)</span>
+      <span class="ctrl-val" id="lsh">0.00</span>
+    </div>
+    <input type="range" id="sh" min="-1.5" max="1.5" step="0.05" value="0">
+  </div>
+</div>
+
+<!-- Presets -->
+<div class="presets">
+  <button class="reset-btn" onclick="resetAll()">↺ Reset</button>
+  <button onclick="setPreset('wide')">Stretch wide</button>
+  <button onclick="setPreset('squish')">Squish vertically</button>
+  <button onclick="setPreset('tall')">Stretch tall</button>
+  <button onclick="setPreset('spin45')">Rotate 45°</button>
+  <button onclick="setPreset('spin90')">Rotate 90°</button>
+  <button onclick="setPreset('shear')">Shear</button>
+  <button onclick="setPreset('flip')">Flip horizontal</button>
+</div>
+
+<!-- Explanation -->
+<div class="explain" id="explain"></div>
+
+<!-- Theory -->
+<div class="theory">
+  <h2>How the matrix encodes each transformation</h2>
+  <p>
+    <strong>Scaling:</strong> <code>[[sx, 0], [0, sy]]</code> — top-left scales x, bottom-right scales y. Values &gt; 1 stretch, &lt; 1 compress, negative values flip.<br><br>
+    <strong>Rotation by θ:</strong> <code>[[cosθ, −sinθ], [sinθ, cosθ]]</code> — rotates every point around the origin by angle θ.<br><br>
+    <strong>Shear:</strong> <code>[[1, k], [0, 1]]</code> — slides each point horizontally by k times its y-coordinate. Keeps area unchanged.<br><br>
+    <strong>Composition:</strong> this applet computes R(θ) · S · x, so the displayed matrix is their product — one matrix capturing all three operations at once.
+  </p>
+</div>
+
+<script>
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+const W = 480, H = 300, cx = W/2, cy = H/2;
+const EMOJI = '😂';
+const BASE = 80;
+
+let sx=1, sy=1, rot=0, sh=0;
+
+function getMatrix() {
+  const r = rot * Math.PI / 180;
+  const cos = Math.cos(r), sin = Math.sin(r);
+  // M = R * S where S includes shear
+  // S = [[sx, sh], [0, sy]]
+  // R = [[cos,-sin],[sin,cos]]
+  const a = cos*sx  + (-sin)*0;
+  const b = cos*sh  + (-sin)*sy;
+  const c = sin*sx  + cos*0;
+  const d = sin*sh  + cos*sy;
+  return [a, b, c, d];
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.save();
+  ctx.translate(cx, cy);
+  const [a, b, c, d] = getMatrix();
+  ctx.strokeStyle = 'rgba(124,61,15,0.10)';
+  ctx.lineWidth = 1;
+  for (let i = -6; i <= 6; i++) {
+    const step = 36;
+    // transformed vertical grid line
+    ctx.beginPath();
+    const x1 = a*i*step + b*(-6*step), y1 = c*i*step + d*(-6*step);
+    const x2 = a*i*step + b*(6*step),  y2 = c*i*step + d*(6*step);
+    ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    // transformed horizontal grid line
+    ctx.beginPath();
+    const x3 = a*(-6*step) + b*i*step, y3 = c*(-6*step) + d*i*step;
+    const x4 = a*(6*step)  + b*i*step, y4 = c*(6*step)  + d*i*step;
+    ctx.moveTo(x3, y3); ctx.lineTo(x4, y4); ctx.stroke();
+  }
+
+  // Transformed axes
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(26,77,124,0.35)';
+  ctx.beginPath(); ctx.moveTo(a*-200,c*-200); ctx.lineTo(a*200,c*200); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(b*-200,d*-200); ctx.lineTo(b*200,d*200); ctx.stroke();
+
+  ctx.restore();
+
+  // Emoji
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.transform(a, c, b, d, 0, 0);
+  ctx.font = BASE + 'px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(EMOJI, 0, 0);
+  ctx.restore();
+
+  // Update matrix display
+  const entries = [a, b, c, d];
+  const ids = ['m00','m01','m10','m11'];
+  const identity = [1,0,0,1];
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.textContent = entries[i].toFixed(2);
+    el.classList.toggle('changed', Math.abs(entries[i] - identity[i]) > 0.01);
+  });
+
+  // Explanation
+  const lines = [];
+  if (Math.abs(sx-1) > 0.05) lines.push(sx > 1 ? `stretched horizontally by <strong>${sx.toFixed(1)}×</strong>` : `compressed horizontally to <strong>${sx.toFixed(1)}×</strong>`);
+  if (Math.abs(sy-1) > 0.05) lines.push(sy > 1 ? `stretched vertically by <strong>${sy.toFixed(1)}×</strong>` : `compressed vertically to <strong>${sy.toFixed(1)}×</strong>`);
+  if (Math.abs(rot) > 1) lines.push(`rotated <strong>${rot}°</strong>${rot > 0 ? ' counter-clockwise' : ' clockwise'}`);
+  if (Math.abs(sh) > 0.05) lines.push(`sheared horizontally by <strong>${sh.toFixed(2)}</strong>`);
+  document.getElementById('explain').innerHTML = lines.length
+    ? '😂 is ' + lines.join(', ') + '.'
+    : 'The matrix is the <strong>identity I</strong> — no transformation applied. Every point maps to itself.';
+}
+
+function syncAll() {
+  sx  = parseFloat(document.getElementById('sx').value);
+  sy  = parseFloat(document.getElementById('sy').value);
+  rot = parseFloat(document.getElementById('rot').value);
+  sh  = parseFloat(document.getElementById('sh').value);
+  document.getElementById('lsx').textContent  = sx.toFixed(1) + '×';
+  document.getElementById('lsy').textContent  = sy.toFixed(1) + '×';
+  document.getElementById('lrot').textContent = rot + '°';
+  document.getElementById('lsh').textContent  = sh.toFixed(2);
+  draw();
+}
+
+['sx','sy','rot','sh'].forEach(id =>
+  document.getElementById(id).addEventListener('input', syncAll)
+);
+
+function setSliders(sxv, syv, rotv, shv) {
+  document.getElementById('sx').value  = sxv;
+  document.getElementById('sy').value  = syv;
+  document.getElementById('rot').value = rotv;
+  document.getElementById('sh').value  = shv;
+  syncAll();
+}
+
+function resetAll()      { setSliders(1, 1, 0, 0); }
+function setPreset(p) {
+  if (p==='wide')   setSliders(2.5, 0.7,  0,    0);
+  if (p==='squish') setSliders(1,   0.35, 0,    0);
+  if (p==='tall')   setSliders(0.5, 2.2,  0,    0);
+  if (p==='spin45') setSliders(1,   1,    45,   0);
+  if (p==='spin90') setSliders(1,   1,    90,   0);
+  if (p==='shear')  setSliders(1,   1,    0,    0.9);
+  if (p==='flip')   setSliders(-1,  1,    0,    0);
+}
+
+draw();
+</script>
+</body>
+</html>

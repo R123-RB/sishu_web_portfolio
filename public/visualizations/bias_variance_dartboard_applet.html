@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bias and Variance — Interactive Dartboard</title>
+<style>
+:root{--cream:#fffaf0;--green:#4f9669;--darkgreen:#2f6248;--orange:#f5b36d;--purple:#8e79c8;--pink:#eadbe9;--ink:#2d2d32;--pale:#fbe6c9}
+*{box-sizing:border-box}body{margin:0;background:#f7f2e4;color:var(--ink);font-family:"Segoe UI",Arial,sans-serif}.app{max-width:1200px;margin:auto;padding:18px}
+header,.card{border-radius:20px;background:var(--cream);border:2px solid #68a77b;padding:18px;margin-bottom:15px}header{text-align:center}h1{font:bold 34px Georgia;color:var(--darkgreen);margin:0}header p{margin:8px 0 0}
+.layout{display:grid;grid-template-columns:300px 1fr;gap:15px}.controls{background:var(--pink);border-color:#b58cbd}h2{font-size:21px;margin:0 0 12px}
+label{display:flex;justify-content:space-between;font-weight:700;margin:12px 0 5px}input[type=range]{width:100%;accent-color:var(--green)}button{font:inherit;border:0;border-radius:10px;padding:10px;cursor:pointer;font-weight:700;background:#e7e2ef}button.primary{background:var(--darkgreen);color:white}button:focus{outline:3px solid #f2ad5f}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}.modes button.active{background:var(--darkgreen);color:white}.value{font:20px Georgia}.target{background:#fff;border-radius:14px;padding:6px}.target svg{width:100%;height:auto;display:block}
+.explain{background:var(--pale);border-radius:13px;padding:13px;line-height:1.5;margin-top:12px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.stat{background:#fff;border-radius:11px;padding:10px;text-align:center}.stat b{display:block;font-size:20px;margin-top:4px}.footer{line-height:1.55;background:#e9f1e4;border:1px solid #8db99a;padding:14px;border-radius:14px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
+</style></head><body><main class="app">
+<header><h1>Bias and Variance: The Dartboard Analogy</h1><p>Explore accuracy (bias) and consistency (variance) by changing where darts land.</p></header>
+<div class="layout"><section class="card controls">
+<h2>🎛️ Experiment controls</h2><label>Choose a pattern</label>
+<div class="modes"><button class="active" data-mode="lowlow">Low bias · Low variance</button><button data-mode="highlow">High bias · Low variance</button><button data-mode="lowhigh">Low bias · High variance</button><button data-mode="highhigh">High bias · High variance</button></div>
+<label>Bias (distance from target) <span class="value" id="biasVal">Low</span></label><input id="bias" type="range" min="0" max="100" value="18">
+<label>Variance (spread) <span class="value" id="varianceVal">Low</span></label><input id="variance" type="range" min="5" max="85" value="15">
+<label>Number of darts <span class="value" id="countVal">12</span></label><input id="count" type="range" min="3" max="60" value="12">
+<button class="primary" id="throw" style="width:100%;margin-top:14px">🎯 Throw darts again</button><button id="reset" style="width:100%;margin-top:8px">Reset to low bias, low variance</button>
+<div class="explain" id="description"></div><div class="stats"><div class="stat">Average distance from target<b id="dist">—</b></div><div class="stat">Dart spread (RMS)<b id="spread">—</b></div><div class="stat">Darts shown<b id="num">12</b></div></div>
+</section><section class="card"><h2>🎯 Interactive dartboard</h2><div class="target"><svg id="board" viewBox="0 0 650 450" role="img" aria-label="Dartboard showing target center and simulated dart impacts"></svg></div>
+<div style="display:flex;gap:13px;flex-wrap:wrap;font-size:13px;margin-top:8px"><span>⚫ Target center</span><span>🟢 Dart impacts</span><span>🟠 Mean landing position</span></div><div class="explain" id="visualExplain"></div></section></div>
+<section class="card"><h2>🧠 Connect the picture to machine learning</h2><div class="footer"><b>Bias</b> describes systematic error: predictions are consistently shifted away from the true value.<br><b>Variance</b> describes sensitivity to the data: predictions change a lot across different training samples.<br><b>Low bias + low variance</b> is the goal: predictions are accurate on average and consistent. In real machine learning, bias and variance are not literally dart coordinates; the dartboard is an analogy to build intuition.</div></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);let mode='lowlow',seed=12345;
+function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
+function normal(){return Math.sqrt(-2*Math.log(Math.max(rand(),1e-10)))*Math.cos(2*Math.PI*rand())}
+function setMode(m){mode=m;const vals={lowlow:[18,15],highlow:[62,15],lowhigh:[18,65],highhigh:[62,65]}[m];$('bias').value=vals[0];$('variance').value=vals[1];document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));draw()}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+['bias','variance','count'].forEach(id=>$(id).addEventListener('input',draw));
+$('throw').addEventListener('click',()=>{seed=(Math.random()*4294967295)>>>0;draw()});
+$('reset').addEventListener('click',()=>{seed=12345;$('count').value=12;setMode('lowlow')});
+function draw(){const bias=+$('bias').value,variance=+$('variance').value,n=+$('count').value; $('biasVal').textContent=bias<33?'Low':bias<66?'Medium':'High';$('varianceVal').textContent=variance<30?'Low':variance<58?'Medium':'High';$('countVal').textContent=n;$('num').textContent=n;
+const svg=$('board'),cx=325,cy=225,R=175;let s='<rect x="0" y="0" width="650" height="450" rx="12" fill="#fff"/>';
+[R,R*.82,R*.64,R*.46,R*.28,R*.11].forEach((r,i)=>s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${i%2===0?'#fff':'#f5f0e6'}" stroke="#34343a" stroke-width="${i===5?2.5:1.7}"/>`);
+s+=`<line x1="${cx-R-18}" y1="${cy}" x2="${cx+R+18}" y2="${cy}" stroke="#bbb" stroke-dasharray="4 6"/><line x1="${cx}" y1="${cy-R-18}" x2="${cx}" y2="${cy+R+18}" stroke="#bbb" stroke-dasharray="4 6"/><circle cx="${cx}" cy="${cy}" r="5" fill="#111"/><text x="${cx+10}" y="${cy-10}" font-size="12" fill="#111">True target</text>`;
+const d0=bias*1.25,a=.7,mx=cx+d0*Math.cos(a),my=cy+d0*Math.sin(a);let points=[],sx=0,sy=0;
+for(let i=0;i<n;i++){let x=Math.max(20,Math.min(630,mx+normal()*variance*.92)),y=Math.max(20,Math.min(430,my+normal()*variance*.72));points.push([x,y]);sx+=x;sy+=y}
+points.forEach(([x,y])=>s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6.2" fill="#43a064" stroke="#214b31" stroke-width="1.3" opacity=".9"/>`);
+const ax=sx/n,ay=sy/n;s+=`<circle cx="${ax}" cy="${ay}" r="9" fill="#f0a24c" stroke="#a85d17" stroke-width="2"/><line x1="${cx}" y1="${cy}" x2="${ax}" y2="${ay}" stroke="#f0a24c" stroke-width="2" stroke-dasharray="5 4"/><text x="18" y="28" font-size="14" fill="#555">Simulated outcomes — throw again for a new sample</text>`;svg.innerHTML=s;
+$('dist').textContent=Math.hypot(ax-cx,ay-cy).toFixed(1)+' px';$('spread').textContent=Math.sqrt(points.reduce((z,[x,y])=>z+(x-ax)**2+(y-ay)**2,0)/n).toFixed(1)+' px';
+let b=$('biasVal').textContent.toLowerCase(),v=$('varianceVal').textContent.toLowerCase();$('description').innerHTML=`<b>Current setting:</b> ${b} bias and ${v} variance.<br>Bias shifts the average landing location away from the target. Variance changes how widely darts scatter around that location.`;
+let msg=b==='low'&&v==='low'?'The darts cluster tightly near the bullseye: accurate on average and consistent.':b==='high'&&v==='low'?'The darts cluster tightly but away from the bullseye: consistent yet systematically inaccurate.':b==='low'&&v==='high'?'The darts are widely scattered around a location near the target: low systematic shift but high variability.':b==='high'&&v==='high'?'The darts are widely scattered and shifted away from the bullseye: both systematic error and variability are high.':'Observe the orange average position and the spread of the green darts.';
+$('visualExplain').innerHTML=`<b>How to read this:</b> ${msg}<br>The orange marker is the sample mean landing position; the black dot is the true target. Select a preset or change the sliders, then click <b>Throw darts again</b>.`}
+draw();
+</script></body></html>
