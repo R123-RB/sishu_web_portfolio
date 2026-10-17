@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { Navbar } from "@/components/ui/Navbar";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function RootLayout({
   children,
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col pt-20" suppressHydrationWarning>
         <Navbar />
         {children}
+        <Analytics />
       </body>
     </html>
   );
